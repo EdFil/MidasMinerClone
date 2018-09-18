@@ -25,18 +25,22 @@ set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 # SDL2 Dependency
 set(SDL2_PATH "${DEPENDENCIES_DIR}/SDL2")
-set(SDL2_IMAGE_PATH "${DEPENDENCIES_DIR}/SDL2_image")
 find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-
-message(STATUS "SDL2_LIBRARY -> ${SDL2_LIBRARY}")
 message(STATUS "SDL2_FOUND -> ${SDL2_FOUND}")
+message(STATUS "SDL2_LIBRARY -> ${SDL2_LIBRARY}")
 message(STATUS "SDL2_INCLUDE_DIR -> ${SDL2_INCLUDE_DIR}")
 
+# SDL2_image Dependency
+set(SDL2_IMAGE_PATH "${DEPENDENCIES_DIR}/SDL2_image")
+find_package(SDL2_image REQUIRED)
+message(STATUS "SDL2_IMAGE_FOUND -> ${SDL2_IMAGE_FOUND}")
 message(STATUS "SDL2_IMAGE_LIBRARIES -> ${SDL2_IMAGE_LIBRARIES}")
 message(STATUS "SDL2_IMAGE_INCLUDE_DIRS -> ${SDL2_IMAGE_INCLUDE_DIRS}")
-message(STATUS "SDL2_IMAGE_FOUND -> ${SDL2_IMAGE_FOUND}")
 message(STATUS "SDL2_IMAGE_VERSION_STRING -> ${SDL2_IMAGE_VERSION_STRING}")
+
+# GLM Depencency
+set(GLM_TEST_ENABLE OFF)
+add_subdirectory("${DEPENDENCIES_DIR}/glm")
 
 # Code Generation
 file(GLOB_RECURSE ENGINE_IN_FILES "${SOURCE_DIR}/*.in")
@@ -60,13 +64,16 @@ target_include_directories(Engine_Static
     ${SOURCE_DIR} 
     ${SDL2_INCLUDE_DIR}
     ${SDL2_IMAGE_INCLUDE_DIRS}
+    ${glm_SOURCE_DIR}
 )
 
 # Link dependencies
 target_link_libraries(Engine_Static 
     PUBLIC 
     ${SDL2_LIBRARY}
-    ${SDL2_IMAGE_LIBRARIES})
+    ${SDL2_IMAGE_LIBRARIES}
+    glm_static
+)
 
 # Source group generation for IDEs
 foreach(SOURCE IN ITEMS ${SOURCES})
@@ -75,3 +82,9 @@ foreach(SOURCE IN ITEMS ${SOURCES})
     string(REPLACE "/" "\\" GROUP_PATH "${SOURCE_PATH_REL}")
     source_group("${GROUP_PATH}" FILES "${SOURCE}")
 endforeach()
+
+# get_cmake_property(_variableNames VARIABLES)
+# list (SORT _variableNames)
+# foreach (_variableName ${_variableNames})
+#     message(STATUS "${_variableName}=${${_variableName}}")
+# endforeach()
