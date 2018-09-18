@@ -5,6 +5,13 @@
 #include <SDL.h>
 #include <SDL_log.h>
 
+#include "TextureManager.hpp"
+
+SDL_Texture* _background;
+
+Engine::Engine() { }
+Engine::~Engine() { }
+
 bool Engine::initialize() {
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
 
@@ -14,7 +21,7 @@ bool Engine::initialize() {
 		return false;
 	}
 
-	_window = SDL_CreateWindow("ConceptV2", 100, 100, 400, 400, SDL_WINDOW_SHOWN);
+	_window = SDL_CreateWindow("ConceptV2", 100, 100, 755, 600, SDL_WINDOW_SHOWN);
 	if (_window == nullptr) {
 		SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "SDL_CreateWindow Error: %s", SDL_GetError());
 		SDL_Quit();
@@ -28,6 +35,9 @@ bool Engine::initialize() {
 		SDL_Quit();
 		return false;
 	}
+
+	_textureManager = std::make_unique<TextureManager>(this);
+	_background = _textureManager->loadTexture(TextureID::Background);
 
 	return true;
 }
@@ -81,6 +91,9 @@ void Engine::mainLoop() {
 		// Render Scene
 		SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
 		SDL_RenderClear(_renderer);
+	
+		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
+
 		SDL_RenderPresent(_renderer);
 	}
 }

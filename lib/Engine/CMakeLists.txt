@@ -4,9 +4,10 @@ cmake_minimum_required(VERSION 2.8.12)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -ansi -pedantic")
 
 # Configure CMake
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+set(CMAKE_CXX_STANDARD 14)
 
 # CXX Flags
 if(MSVC)
@@ -22,13 +23,20 @@ endif()
 set(DEPENDENCIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-# SDL Dependency
-set(SDL_SHARED ON CACHE BOOL "Build a shared version of the library")
-set(SDL_STATIC OFF CACHE BOOL "Build a static version of the library")
-add_subdirectory("${DEPENDENCIES_DIR}/SDL2" "${CMAKE_BINARY_DIR}/SDL2")
-get_property(SOMETHING VARIABLE PROPERTY EXTRA_LIBS)
-set(SDL_INCLUDE_DIRS "${SDL2_BINARY_DIR}/include" "${SDL2_SOURCE_DIR}/include")
-set(SDL_LIBS SDL2 SDL2main)
+# SDL2 Dependency
+set(SDL2_PATH "${DEPENDENCIES_DIR}/SDL2")
+set(SDL2_IMAGE_PATH "${DEPENDENCIES_DIR}/SDL2_image")
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
+
+message(STATUS "SDL2_LIBRARY -> ${SDL2_LIBRARY}")
+message(STATUS "SDL2_FOUND -> ${SDL2_FOUND}")
+message(STATUS "SDL2_INCLUDE_DIR -> ${SDL2_INCLUDE_DIR}")
+
+message(STATUS "SDL2_IMAGE_LIBRARIES -> ${SDL2_IMAGE_LIBRARIES}")
+message(STATUS "SDL2_IMAGE_INCLUDE_DIRS -> ${SDL2_IMAGE_INCLUDE_DIRS}")
+message(STATUS "SDL2_IMAGE_FOUND -> ${SDL2_IMAGE_FOUND}")
+message(STATUS "SDL2_IMAGE_VERSION_STRING -> ${SDL2_IMAGE_VERSION_STRING}")
 
 # Code Generation
 file(GLOB_RECURSE ENGINE_IN_FILES "${SOURCE_DIR}/*.in")
@@ -44,17 +52,21 @@ file(GLOB_RECURSE SOURCES
     "${SOURCE_DIR}/*.hpp" "${SOURCE_DIR}/*.h")
 
 # Make library
-add_library(Engine_Static SHARED ${SOURCES})
+add_library(Engine_Static STATIC ${SOURCES})
 
 # Include directotories
 target_include_directories(Engine_Static 
     PUBLIC
-    "${SOURCE_DIR}" 
-    "${SDL_INCLUDE_DIRS}"
+    ${SOURCE_DIR} 
+    ${SDL2_INCLUDE_DIR}
+    ${SDL2_IMAGE_INCLUDE_DIRS}
 )
 
 # Link dependencies
-target_link_libraries(Engine_Static PUBLIC ${SDL_LIBS})
+target_link_libraries(Engine_Static 
+    PUBLIC 
+    ${SDL2_LIBRARY}
+    ${SDL2_IMAGE_LIBRARIES})
 
 # Source group generation for IDEs
 foreach(SOURCE IN ITEMS ${SOURCES})

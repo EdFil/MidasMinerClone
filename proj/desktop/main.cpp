@@ -1,6 +1,6 @@
 #include <Engine.hpp>
 
-int main(int argc, char const *argv[]) {
+int main(int, char const **) {
     Engine engine;
     if(engine.initialize()) {
         engine.run();

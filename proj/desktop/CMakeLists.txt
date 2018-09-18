@@ -2,7 +2,9 @@ project(Concept)
 cmake_minimum_required(VERSION 2.8.12)
 
 # Configure CMake
-set (CMAKE_CXX_STANDARD 14)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_CXX_STANDARD 14)
 
 # Variable definitions
 set(ROOT_PROJ_DIR "${CMAKE_SOURCE_DIR}/../..")
