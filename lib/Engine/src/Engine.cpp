@@ -6,6 +6,7 @@
 #include <SDL_log.h>
 
 #include "TextureManager.hpp"
+#include "ecs/ECS.hpp"
 
 SDL_Texture* _background;
 
@@ -38,6 +39,16 @@ bool Engine::initialize() {
 
 	_textureManager = std::make_unique<TextureManager>(this);
 	_background = _textureManager->loadTexture(TextureID::Background);
+
+	_transformSystem.initialize();
+	_renderSystem.initialize();
+
+	TransformComponent* transformComponent = _transformSystem.createComponent();
+	RenderComponent* renderComponent = _renderSystem.createComponent(transformComponent, _textureManager->loadTexture(TextureID:: Red));
+
+//    Entity* entity = _entitySystem.createEntity();
+//	entity->addComponent(_transformSystem.createComponent());
+
 
 	return true;
 }
@@ -93,6 +104,10 @@ void Engine::mainLoop() {
 		SDL_RenderClear(_renderer);
 	
 		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
+
+
+        _transformSystem.update(0.16f);
+        _renderSystem.draw(_renderer);
 
 		SDL_RenderPresent(_renderer);
 	}
