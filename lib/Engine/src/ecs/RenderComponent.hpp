@@ -2,6 +2,8 @@
 
 #include "ECS.hpp"
 
+#include <glm/vec2.hpp>
+
 class TransformComponent;
 class RenderSystem;
 struct SDL_Renderer;
@@ -19,6 +21,7 @@ private:
     SDL_Texture* _texture;
 	RenderSystem* _system;
     TransformComponent* _transformComponent;
+    glm::vec<2, int> _size;
 
 	void cleanup();
 

@@ -39,22 +39,21 @@ bool Engine::initialize() {
 	}
 
 	_textureManager = std::make_unique<TextureManager>(this);
-	_background = _textureManager->loadTexture(TextureID::Background);
+    _eventDispatcher = std::make_unique<EventDispatcher>();
 
 	_transformSystem.initialize();
 	_renderSystem.initialize();
+    _eventDispatcher->initialize();
 
-	TransformComponent* transformComponent = _transformSystem.createComponent();
-	RenderComponent* renderComponent = _renderSystem.createComponent(transformComponent, _textureManager->loadTexture(TextureID:: Red));
-
-	_entity = _entitySystem.createEntity();
-	_entity->addComponent(transformComponent);
-	_entity->addComponent(renderComponent);
+    _background = _textureManager->loadTexture(TextureID::Background);
+    _eventDispatcher->registerForApplicationEvents(this);
 
 	return true;
 }
 
 void Engine::cleanup() {
+    _eventDispatcher->unregisterForApplicationEvents(this);
+
 	if(_renderer)
 		SDL_DestroyRenderer(_renderer);
 	if(_window)
@@ -68,45 +67,24 @@ void Engine::run() {
 }
 
 void Engine::mainLoop() {
-    Uint8 *selectedColor = nullptr;
-    bool *selectedBool = nullptr;
-    Uint8 r = static_cast<Uint8>(rand() % 256), g = static_cast<Uint8>(rand() % 256), b = static_cast<Uint8>(rand() % 256);
-    bool rbool = false, gbool = false, bbool = false;
-
 	while (_isRunning) {
-		// Fetch SDL_Events
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) {
-				_isRunning = false;
-			}
-		}
+		_eventDispatcher->update();
 
-        // <DEBUG>
-        switch(rand() % 3) {
-            case 0: selectedColor = &r; selectedBool = &rbool; break;
-            case 1: selectedColor = &g; selectedBool = &gbool; break;
-            case 2: selectedColor = &b; selectedBool = &bbool; break;
+        static int numFrames = 0;
+        if(numFrames++ % 200 < 100 && _entity == nullptr) {
+			TransformComponent* transformComponent = _transformSystem.createComponent();
+			RenderComponent* renderComponent = _renderSystem.createComponent(transformComponent, _textureManager->loadTexture(TextureID:: Red));
+
+			_entity = _entitySystem.createEntity();
+			_entity->addComponent(transformComponent);
+			_entity->addComponent(renderComponent);
+        } else if (numFrames % 200 >= 100 && _entity != nullptr) {
+            _entity->release();
+            _entity = nullptr;
         }
-
-        if(*selectedBool) {
-            *selectedColor = static_cast<Uint8>(*selectedColor + 1);
-            if(*selectedColor > 254)
-                *selectedBool = !(*selectedBool);
-        } else {
-            *selectedColor = static_cast<Uint8>(*selectedColor - 1);
-            if(*selectedColor < 1)
-                *selectedBool = !(*selectedBool);
-        }
-        // </DEBUG>
-
-		TransformComponent* component = static_cast<TransformComponent*>(_entity->getComponentWithType(ComponentType::Transform));
-		if(component->position.x > 10) {
-			_entity->release();
-		}
 
 		// Render Scene
-		SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
+		SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
 		SDL_RenderClear(_renderer);
 	
 		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
@@ -115,4 +93,8 @@ void Engine::mainLoop() {
 
 		SDL_RenderPresent(_renderer);
 	}
+}
+
+void Engine::onQuit() {
+    _isRunning = false;
 }

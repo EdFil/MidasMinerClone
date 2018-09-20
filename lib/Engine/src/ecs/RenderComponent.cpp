@@ -17,15 +17,18 @@ bool RenderComponent::initialize(TransformComponent* transformComponent, SDL_Tex
     _transformComponent = transformComponent;
     _texture = texture;
     state = State::Used;
+
+    // Cache texture size
+    SDL_QueryTexture(_texture, nullptr, nullptr, &_size.x, &_size.y);
+
     return true;
 }
 
 void RenderComponent::draw(SDL_Renderer* renderer) {
     auto& position = _transformComponent->position;
-    position.x += 0.1;
+    position.x += 1;
 
-    SDL_Rect destRect = {static_cast<int>(position.x), static_cast<int>(position.y) };
-    SDL_QueryTexture(_texture, nullptr, nullptr, &destRect.w, &destRect.h);
+    SDL_Rect destRect = {static_cast<int>(position.x), static_cast<int>(position.y), _size.x, _size.y };
     SDL_RenderCopy(renderer, _texture, nullptr, &destRect);
 }
 

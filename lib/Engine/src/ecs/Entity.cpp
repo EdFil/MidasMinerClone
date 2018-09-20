@@ -1,5 +1,7 @@
 #include "Entity.hpp"
 
+#include <algorithm>
+
 #include "EntitySystem.hpp"
 
 void Entity::release() {
@@ -21,7 +23,7 @@ void Entity::addComponent(Component* component) {
 }
 
 void Entity::removeComponent(Component* component) {
-	_components.erase(std::remove(_components.begin(), _components.end(), component));
+	_components.erase(std::remove(_components.begin(), _components.end(), component), _components.end());
 }
 
 void Entity::cleanup() {
