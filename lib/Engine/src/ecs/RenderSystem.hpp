@@ -12,6 +12,7 @@ struct SDL_texture;
 class RenderSystem {
 public:
     bool initialize();
+	void releaseComponent(RenderComponent* component);
     bool draw(SDL_Renderer* renderer);
 
     RenderComponent* createComponent(TransformComponent* transformComponent, SDL_Texture* texture);

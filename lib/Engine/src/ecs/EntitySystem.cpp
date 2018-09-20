@@ -2,7 +2,15 @@
 // Created by edgar on 19-09-2018.
 //
 
-#include "EntityManager.hpp"
+#include "EntitySystem.hpp"
+
+bool EntitySystem::initialize() {
+	for(Entity& entity : _entities) {
+		entity._system = this;
+	}
+
+	return true;
+}
 
 Entity *EntitySystem::createEntity() {
     for(Entity& entity : _entities) {
@@ -15,6 +23,7 @@ Entity *EntitySystem::createEntity() {
     return nullptr;
 }
 
-void EntitySystem::deleteEntity(Entity* entity) {
+void EntitySystem::releaseEntity(Entity* entity) {
     entity->state = State::Unused;
+	entity->cleanup();
 }

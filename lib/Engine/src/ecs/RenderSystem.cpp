@@ -4,9 +4,17 @@
 
 #include "TransformComponent.hpp"
 
-bool RenderSystem::initialize()
-{
+bool RenderSystem::initialize() {
+	for(RenderComponent& component : _components) {
+		component._system = this;
+		component.type = ComponentType::Render;
+	}
     return true;
+}
+
+void RenderSystem::releaseComponent(RenderComponent* component) {
+	component->state = State::Unused;
+	component->cleanup();
 }
 
 bool RenderSystem::draw(SDL_Renderer* renderer) {

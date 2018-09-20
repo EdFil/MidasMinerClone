@@ -1,15 +1,16 @@
 #pragma once
 
+#include <array>
+
 #include "ECS.hpp"
+#include "Entity.hpp"
 
 class EntitySystem {
 public:
-    bool initialize() {
-        return false;
-    }
+	bool initialize();
 
     Entity* createEntity();
-    void deleteEntity(Entity* entity);
+    void releaseEntity(Entity* entity);
 
 private:
     std::array<Entity, k_numMaxEntities> _entities;

@@ -9,6 +9,7 @@
 #include "ecs/ECS.hpp"
 
 SDL_Texture* _background;
+Entity* _entity;
 
 Engine::Engine() { }
 Engine::~Engine() { }
@@ -46,9 +47,9 @@ bool Engine::initialize() {
 	TransformComponent* transformComponent = _transformSystem.createComponent();
 	RenderComponent* renderComponent = _renderSystem.createComponent(transformComponent, _textureManager->loadTexture(TextureID:: Red));
 
-//    Entity* entity = _entitySystem.createEntity();
-//	entity->addComponent(_transformSystem.createComponent());
-
+	_entity = _entitySystem.createEntity();
+	_entity->addComponent(transformComponent);
+	_entity->addComponent(renderComponent);
 
 	return true;
 }
@@ -99,14 +100,17 @@ void Engine::mainLoop() {
         }
         // </DEBUG>
 
+		TransformComponent* component = static_cast<TransformComponent*>(_entity->getComponentWithType(ComponentType::Transform));
+		if(component->position.x > 10) {
+			_entity->release();
+		}
+
 		// Render Scene
 		SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
 		SDL_RenderClear(_renderer);
 	
 		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
 
-
-        _transformSystem.update(0.16f);
         _renderSystem.draw(_renderer);
 
 		SDL_RenderPresent(_renderer);

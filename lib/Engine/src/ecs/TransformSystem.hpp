@@ -6,13 +6,12 @@
 
 #include "TransformComponent.hpp"
 
-class TransformSystem : public System {
+class TransformSystem {
 public:
-    bool initialize() override;
-    bool update(float delta) override;
+    bool initialize();
 
     TransformComponent* createComponent();
-
+	void releaseComponent(TransformComponent* component);
 private:
     std::array<TransformComponent, k_numMaxTransformComponents> _components;
 };

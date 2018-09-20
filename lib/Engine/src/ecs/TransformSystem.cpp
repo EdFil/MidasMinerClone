@@ -1,8 +1,13 @@
 #include "TransformSystem.hpp"
 
-bool TransformSystem::initialize() { return true; }
+bool TransformSystem::initialize() {
+	for(TransformComponent& component : _components) {
+		component._system = this;
+		component.type = ComponentType::Transform;
+	}
 
-bool TransformSystem::update(float) { return true; }
+	return true;
+}
 
 TransformComponent* TransformSystem::createComponent() {
     for(TransformComponent& component : _components) {
@@ -13,4 +18,8 @@ TransformComponent* TransformSystem::createComponent() {
     }
 
     return nullptr;
+}
+
+void TransformSystem::releaseComponent(TransformComponent* component) {
+	component->state = State::Unused;
 }

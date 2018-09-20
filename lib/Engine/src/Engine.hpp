@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "ecs/EntityManager.hpp"
+#include "ecs/EntitySystem.hpp"
 #include "ecs/TransformSystem.hpp"
 #include "ecs/RenderSystem.hpp"
 
