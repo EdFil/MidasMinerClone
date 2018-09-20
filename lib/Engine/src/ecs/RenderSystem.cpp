@@ -1,6 +1,11 @@
 #include "RenderSystem.hpp"
 
-bool RenderSystem::initialize() {
+#include <SDL_render.h>
+
+#include "TransformComponent.hpp"
+
+bool RenderSystem::initialize()
+{
     return true;
 }
 
