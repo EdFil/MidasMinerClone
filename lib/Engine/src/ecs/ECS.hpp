@@ -3,11 +3,12 @@
 constexpr int k_numMaxEntities = 100;
 constexpr int k_numMaxTransformComponents = k_numMaxEntities;
 constexpr int k_numMaxRenderComponents = k_numMaxEntities;
+constexpr int k_numMaxGemsComponents = k_numMaxEntities;
 
 enum class ComponentType {
     Transform = 0,
     Render = 1,
-    Clickable,
+    Gem,
     COUNT
 };
 

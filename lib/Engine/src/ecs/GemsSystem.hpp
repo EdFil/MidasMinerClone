@@ -1,7 +1,11 @@
 #pragma once
 
-#include "Entity.hpp"
+#include <array>
 
+#include "ECS.hpp"
+#include "GemsComponent.hpp"
+
+class Entity;
 class Engine;
 
 enum class GameState {
@@ -17,11 +21,17 @@ public:
 
     void update(float delta);
 
+    Engine* engine() const { return _engine; }
+
+    GemsComponent* createComponent(RenderComponent* renderComponent);
+    void releaseComponent(GemsComponent* component);
+
 private:
-    GameState _gameState = GameState::INVALID;
-    Engine* _engine = nullptr;
+    std::array<GemsComponent, k_numMaxGemsComponents> _components;
     std::vector<Entity*> _waiting; // 8*8
+    Engine* _engine = nullptr;
     Entity* _board[8][8] = { nullptr };
+    GameState _gameState = GameState::INVALID;
     long _lastTimeSpawned[8] = {0};
 };
 

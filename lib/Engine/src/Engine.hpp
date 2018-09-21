@@ -25,6 +25,7 @@ public:
     TransformSystem* transformSystem() { return &_transformSystem; }
     RenderSystem* renderSystem() { return &_renderSystem; }
     TextureManager* textureManager() { return _textureManager.get(); }
+    EventDispatcher* eventDispatcher() { return _eventDispatcher.get(); }
 
 	void onQuit() override;
 

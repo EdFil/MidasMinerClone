@@ -26,7 +26,7 @@ bool RenderComponent::initialize(TransformComponent* transformComponent, SDL_Tex
 
 void RenderComponent::draw(SDL_Renderer* renderer) {
     if(_isVisible) {
-        const auto &position = _transformComponent->position;
+        const auto &position = _transformComponent->position();
         SDL_Rect destRect = {static_cast<int>(position.x), static_cast<int>(position.y), _size.x, _size.y};
         SDL_RenderCopy(renderer, _texture, nullptr, &destRect);
     }

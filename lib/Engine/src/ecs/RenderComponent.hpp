@@ -17,6 +17,10 @@ public:
 
     void draw(SDL_Renderer* renderer);
 
+    TransformComponent* transformComponent() const { return _transformComponent; }
+    const glm::vec<2, int>& size() const { return _size; }
+
+    bool isVisible() const { return _isVisible; }
     void setIsVisible(bool value) { _isVisible = value; }
 
 private:

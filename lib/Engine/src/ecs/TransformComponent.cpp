@@ -6,6 +6,6 @@ void TransformComponent::release() {
 }
 
 void TransformComponent::initialize() {
-    position = {0.0f, 0.0f};
+    _position = {0.0f, 0.0f};
     state = State::Used;
 }

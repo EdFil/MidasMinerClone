@@ -29,6 +29,11 @@ glm::vec2 positionForIndex(int x, int y) {
 
 bool GemsSystem::initialize(Engine* engine) {
     _gameState = GameState::Initializing;
+    _engine = engine;
+
+    for(GemsComponent& component : _components) {
+        component.type = ComponentType::Gem;
+    }
 
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
@@ -39,9 +44,12 @@ bool GemsSystem::initialize(Engine* engine) {
         auto render = engine->renderSystem()->createComponent(transform, texture);
         render->setIsVisible(false);
 
+        auto gemsComponent = createComponent(render);
+
         auto entity = engine->entitySystem()->createEntity();
         entity->addComponent(transform);
         entity->addComponent(render);
+        entity->addComponent(gemsComponent);
 
         _waiting.push_back(entity);
     }
@@ -77,14 +85,34 @@ void GemsSystem::update(float delta) {
                 Entity* entityToBeSpawned = _waiting.back();
                 _waiting.pop_back();
 
-                auto* transform = static_cast<TransformComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Transform));
-                transform->position = positionForIndex(x, vacantIndex);
+                auto transform = static_cast<TransformComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Transform));
+                transform->setPosition(positionForIndex(x, vacantIndex));
 
-                auto* render= static_cast<RenderComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Render));
+                auto render = static_cast<RenderComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Render));
                 render->setIsVisible(true);
+
+                auto gem = static_cast<GemsComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Gem));
+                gem->setIsActive(true);
+
                 _board[x][vacantIndex] = entityToBeSpawned;
             }
 
         }
     //}
+}
+
+GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
+    for(GemsComponent& component : _components) {
+        if(component.state == State::Unused) {
+            component.initialize(this, renderComponent);
+            return &component;
+        }
+    }
+
+    return nullptr;
+}
+
+void GemsSystem::releaseComponent(GemsComponent *component) {
+    component->state = State::Unused;
+    component->cleanup();
 }
