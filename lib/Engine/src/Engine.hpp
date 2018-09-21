@@ -10,6 +10,7 @@ struct SDL_Window;
 struct SDL_Renderer;
 
 class TextureManager;
+class GemsSystem;
 
 class Engine : public ApplicationEventDelegate {
 public:
@@ -19,6 +20,11 @@ public:
 	bool initialize();
 	void cleanup();
 	void run();
+
+	EntitySystem* entitySystem() { return &_entitySystem; }
+    TransformSystem* transformSystem() { return &_transformSystem; }
+    RenderSystem* renderSystem() { return &_renderSystem; }
+    TextureManager* textureManager() { return _textureManager.get(); }
 
 	void onQuit() override;
 
@@ -37,6 +43,7 @@ private:
 
 	std::unique_ptr<TextureManager> _textureManager;
 	std::unique_ptr<EventDispatcher> _eventDispatcher;
+	std::unique_ptr<GemsSystem> _gemsSystem;
 
 	bool _isRunning = false;
 };

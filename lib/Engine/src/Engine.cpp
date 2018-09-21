@@ -6,6 +6,7 @@
 #include <SDL_log.h>
 
 #include "TextureManager.hpp"
+#include "ecs/GemsSystem.hpp"
 #include "ecs/ECS.hpp"
 
 SDL_Texture* _background;
@@ -40,10 +41,12 @@ bool Engine::initialize() {
 
 	_textureManager = std::make_unique<TextureManager>(this);
     _eventDispatcher = std::make_unique<EventDispatcher>();
+    _gemsSystem = std::make_unique<GemsSystem>();
 
 	_transformSystem.initialize();
 	_renderSystem.initialize();
     _eventDispatcher->initialize();
+    _gemsSystem->initialize(this);
 
     _background = _textureManager->loadTexture(TextureID::Background);
     _eventDispatcher->registerForApplicationEvents(this);
@@ -69,19 +72,6 @@ void Engine::run() {
 void Engine::mainLoop() {
 	while (_isRunning) {
 		_eventDispatcher->update();
-
-        static int numFrames = 0;
-        if(numFrames++ % 200 < 100 && _entity == nullptr) {
-			TransformComponent* transformComponent = _transformSystem.createComponent();
-			RenderComponent* renderComponent = _renderSystem.createComponent(transformComponent, _textureManager->loadTexture(TextureID:: Red));
-
-			_entity = _entitySystem.createEntity();
-			_entity->addComponent(transformComponent);
-			_entity->addComponent(renderComponent);
-        } else if (numFrames % 200 >= 100 && _entity != nullptr) {
-            _entity->release();
-            _entity = nullptr;
-        }
 
 		// Render Scene
 		SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
