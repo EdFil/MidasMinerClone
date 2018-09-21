@@ -9,9 +9,6 @@
 #include "ecs/GemsSystem.hpp"
 #include "ecs/ECS.hpp"
 
-SDL_Texture* _background;
-Entity* _entity;
-
 Engine::Engine() { }
 Engine::~Engine() { }
 
@@ -48,7 +45,6 @@ bool Engine::initialize() {
     _eventDispatcher->initialize();
     _gemsSystem->initialize(this);
 
-    _background = _textureManager->loadTexture(TextureID::Background);
     _eventDispatcher->registerForApplicationEvents(this);
 
 	return true;
@@ -72,15 +68,13 @@ void Engine::run() {
 void Engine::mainLoop() {
 	while (_isRunning) {
 		_eventDispatcher->update();
+		_gemsSystem->update(0.16f);
 
 		// Render Scene
 		SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
 		SDL_RenderClear(_renderer);
 
         _renderSystem.draw(_renderer);
-
-		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
-
 
 		SDL_RenderPresent(_renderer);
 	}

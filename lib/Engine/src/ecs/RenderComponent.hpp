@@ -17,11 +17,14 @@ public:
 
     void draw(SDL_Renderer* renderer);
 
+    void setIsVisible(bool value) { _isVisible = value; }
+
 private:
     SDL_Texture* _texture;
 	RenderSystem* _system;
     TransformComponent* _transformComponent;
     glm::vec<2, int> _size;
+    bool _isVisible = true;
 
 	void cleanup();
 
