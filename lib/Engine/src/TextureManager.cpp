@@ -29,6 +29,7 @@ SDL_Texture* TextureManager::loadTexture(const TextureID textureID) {
     SDL_Texture* texture = SDL_CreateTextureFromSurface(_engine->renderer(), loadedSurface);
     if(texture != nullptr) {
         _cachedTextures[textureID] = texture;
+        SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Created new texture! %s!", fullPath.c_str());
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Unable to create texture from %s! SDL Error: %s\n", fullPath.c_str(), SDL_GetError());
     }
@@ -42,7 +43,7 @@ std::string TextureManager::fullPathForTextureID(TextureID textureID) const {
 
     switch(textureID) {
         case TextureID::Background:
-            return basePath + "BackGround.jpg";
+            return basePath + "Background.png";
         case TextureID::Blue:
             return basePath + "Blue.png";
         case TextureID::Green:

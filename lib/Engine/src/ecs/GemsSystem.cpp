@@ -17,6 +17,7 @@ static const int k_numGemsY = 8;
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
 static const glm::vec2 k_startPosition = glm::vec2(320, 92);
+static const int k_spawnHeight = 60;
 
 bool GemsSystem::initialize(Engine* engine) {
     for(size_t y = 0, x = 0; y < k_numGemsX; y++, x = 0) {

@@ -16,7 +16,7 @@ Engine::Engine() { }
 Engine::~Engine() { }
 
 bool Engine::initialize() {
-	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
+	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_INFO);
 
 	// Init SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -76,10 +76,11 @@ void Engine::mainLoop() {
 		// Render Scene
 		SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
 		SDL_RenderClear(_renderer);
-	
-		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
 
         _renderSystem.draw(_renderer);
+
+		SDL_RenderCopy(_renderer, _background, nullptr, nullptr);
+
 
 		SDL_RenderPresent(_renderer);
 	}
