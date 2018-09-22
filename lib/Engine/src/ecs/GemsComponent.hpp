@@ -1,6 +1,9 @@
 #pragma once
 
 #include "ECS.hpp"
+
+#include <glm/vec2.hpp>
+
 #include "EventDispatcher.hpp"
 
 class GemsSystem;
@@ -13,13 +16,18 @@ public:
     bool initialize(GemsSystem* system, RenderComponent* renderComponent);
     void cleanup();
 
+	void onAddedToBoard(int x, int y);
+	void onMovedInBoard(int toX, int toY);
+	void onRemovedFromBoard();
+
     void setIsActive(bool value);
 
-    void onLeftMouseDown(int x, int y);
-    void onLeftMouseUp(int x, int y);
-    void onMouseMotion(int x, int y);
+    void onLeftMouseDown(int x, int y) override;
+    void onLeftMouseUp(int x, int y) override;
+    void onMouseMotion(int x, int y) override;
 
 private:
+	glm::vec<2, int> _boardIndex{-1, -1};
     GemsSystem* _system = nullptr;
     RenderComponent* _renderComponent = nullptr;
     bool _isActive = false;

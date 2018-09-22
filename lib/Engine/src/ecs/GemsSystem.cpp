@@ -58,9 +58,7 @@ bool GemsSystem::initialize(Engine* engine) {
 }
 
 void GemsSystem::update(float delta) {
-    static int i = 0;
-    if(i++ % 30 != 0) return;
-    //if(_gameState == GameState::Initializing) {
+	//if(_gameState == GameState::Initializing) {
         for(int x = 0; x < k_numGemsX; x++) {
             // Start going from bottom to top to find a vacant position
             int vacantIndex = 0;
@@ -77,6 +75,8 @@ void GemsSystem::update(float delta) {
             if(occupiedIndex != k_numGemsY) {
                 // We didn't reach the top. Found a hole!! Make things fall!
                 SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Make gem from [%d][%d] fall to [%d][%d]", x, occupiedIndex, x, vacantIndex);
+				moveEntityFromTo(x, occupiedIndex, x, vacantIndex);
+
             } else {
                 // Reached the top! Need to spawn new gems!
                 SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Spawn a new gem to [%d][%d]", x, vacantIndex);
@@ -93,12 +93,35 @@ void GemsSystem::update(float delta) {
 
                 auto gem = static_cast<GemsComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Gem));
                 gem->setIsActive(true);
+				gem->onAddedToBoard(x, vacantIndex);
 
                 _board[x][vacantIndex] = entityToBeSpawned;
             }
 
         }
     //}
+}
+
+void GemsSystem::moveEntityFromTo(int fromX, int fromY, int toX, int toY) {
+	std::swap(_board[toX][toY], _board[fromX][fromY]);
+	auto* transform = static_cast<TransformComponent*>(_board[toX][toY]->getComponentWithType(ComponentType::Transform));
+	transform->setPosition(positionForIndex(toX, toY));
+	auto* gem = static_cast<GemsComponent*>(_board[toX][toY]->getComponentWithType(ComponentType::Gem));
+	gem->onMovedInBoard(toX, toY);
+}
+
+void GemsSystem::removeEntity(int x, int y) {
+	Entity* entity = _board[x][y];
+	_board[x][y] = nullptr;
+
+	auto render = static_cast<RenderComponent*>(entity->getComponentWithType(ComponentType::Render));
+	render->setIsVisible(false);
+
+	auto gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+	gem->setIsActive(false);
+	gem->onRemovedFromBoard();
+	
+	_waiting.push_back(entity);
 }
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {

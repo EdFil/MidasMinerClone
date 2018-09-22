@@ -5,6 +5,8 @@ constexpr int k_numMaxTransformComponents = k_numMaxEntities;
 constexpr int k_numMaxRenderComponents = k_numMaxEntities;
 constexpr int k_numMaxGemsComponents = k_numMaxEntities;
 
+class Entity;
+
 enum class ComponentType {
     Transform = 0,
     Render = 1,
@@ -15,6 +17,7 @@ enum class ComponentType {
 enum class State { Unused, Used };
 
 struct Component {
+	Entity* _entity = nullptr;
 	ComponentType type;
     State state = State::Unused;
 

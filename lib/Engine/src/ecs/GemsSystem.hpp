@@ -23,6 +23,9 @@ public:
 
     Engine* engine() const { return _engine; }
 
+	void moveEntityFromTo(int x1, int y1, int x2, int y2);
+	void removeEntity(int x, int y);
+
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
 

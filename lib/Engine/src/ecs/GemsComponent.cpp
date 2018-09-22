@@ -2,6 +2,7 @@
 
 #include <SDL_rect.h>
 #include <SDL_assert.h>
+#include <SDL_log.h>
 
 #include "GemsSystem.hpp"
 #include "Engine.hpp"
@@ -26,6 +27,18 @@ void GemsComponent::cleanup() {
     setIsActive(false);
 }
 
+void GemsComponent::onAddedToBoard(int x, int y) {
+	_boardIndex = { x, y };
+}
+
+void GemsComponent::onMovedInBoard(int toX, int toY) {
+	_boardIndex = { toX, toY };
+}
+
+void GemsComponent::onRemovedFromBoard() {
+	_boardIndex = { -1, -1 };
+}
+
 
 void GemsComponent::setIsActive(bool value) {
     if(_isActive != value) {
@@ -48,7 +61,7 @@ void GemsComponent::onLeftMouseDown(int x, int y) {
     SDL_Point mousePosition{x, y};
 
     if(SDL_PointInRect(&mousePosition, &gemRect)) {
-        _renderComponent->setIsVisible(!_renderComponent->isVisible());
+		_system->removeEntity(_boardIndex.x, _boardIndex.y);
     }
 }
 

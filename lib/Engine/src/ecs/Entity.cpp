@@ -20,10 +20,12 @@ Component* Entity::getComponentWithType(ComponentType type) {
 
 void Entity::addComponent(Component* component) {
 	_components.push_back(component);
+	component->_entity = this;
 }
 
 void Entity::removeComponent(Component* component) {
 	_components.erase(std::remove(_components.begin(), _components.end(), component), _components.end());
+	component->_entity = nullptr;
 }
 
 void Entity::cleanup() {
