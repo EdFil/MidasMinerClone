@@ -8,11 +8,14 @@
 #include "TextureManager.hpp"
 #include "ecs/GemsSystem.hpp"
 #include "ecs/ECS.hpp"
+#include <ctime>
 
 Engine::Engine() { }
 Engine::~Engine() { }
 
 bool Engine::initialize() {
+	srand(time(nullptr));
+
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_INFO);
 
 	// Init SDL

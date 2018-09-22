@@ -20,6 +20,10 @@ public:
 
     SDL_Texture* loadTexture(const TextureID textureID);
 
+	// Helper functions
+	void preloadAllTextures();
+	SDL_Texture* getRandomGemTexture();
+
 private:
 	Engine* _engine;
     std::unordered_map<TextureID, SDL_Texture*> _cachedTextures;

@@ -30,6 +30,7 @@ glm::vec2 positionForIndex(int x, int y) {
 bool GemsSystem::initialize(Engine* engine) {
     _gameState = GameState::Initializing;
     _engine = engine;
+	_engine->textureManager()->preloadAllTextures();
 
     for(GemsComponent& component : _components) {
         component.type = ComponentType::Gem;
@@ -40,8 +41,7 @@ bool GemsSystem::initialize(Engine* engine) {
     for(size_t i = 0; i < numGems; i++) {
         auto transform = engine->transformSystem()->createComponent();
 
-        auto texture = engine->textureManager()->loadTexture(static_cast<TextureID>(1 + rand() % (static_cast<int>(TextureID::COUNT) - 1)));
-        auto render = engine->renderSystem()->createComponent(transform, texture);
+        auto render = engine->renderSystem()->createComponent(transform, nullptr);
         render->setIsVisible(false);
 
         auto gemsComponent = createComponent(render);
@@ -89,7 +89,8 @@ void GemsSystem::update(float delta) {
                 transform->setPosition(positionForIndex(x, vacantIndex));
 
                 auto render = static_cast<RenderComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Render));
-                render->setIsVisible(true);
+				render->setTexture(_engine->textureManager()->getRandomGemTexture());
+            	render->setIsVisible(true);
 
                 auto gem = static_cast<GemsComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Gem));
                 gem->setIsActive(true);

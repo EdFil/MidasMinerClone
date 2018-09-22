@@ -4,6 +4,7 @@
 
 #include "RenderComponent.hpp"
 
+#include <SDL_assert.h>
 #include <SDL_render.h>
 
 #include "TransformComponent.hpp"
@@ -14,18 +15,24 @@ void RenderComponent::release() {
 }
 
 bool RenderComponent::initialize(TransformComponent* transformComponent, SDL_Texture* texture) {
-    _transformComponent = transformComponent;
-    _texture = texture;
+	SDL_assert(transformComponent != nullptr);
+	_transformComponent = transformComponent;
     state = State::Used;
-
-    // Cache texture size
-    SDL_QueryTexture(_texture, nullptr, nullptr, &_size.x, &_size.y);
+	setTexture(texture);
 
     return true;
 }
 
+void RenderComponent::setTexture(SDL_Texture* texture) {
+	_texture = texture;
+	if(_texture != nullptr) {
+		// Cache texture size
+		SDL_QueryTexture(_texture, nullptr, nullptr, &_size.x, &_size.y);
+	}
+}
+
 void RenderComponent::draw(SDL_Renderer* renderer) {
-    if(_isVisible) {
+    if(_isVisible && _texture != nullptr) {
         const auto &position = _transformComponent->position();
         SDL_Rect destRect = {static_cast<int>(position.x), static_cast<int>(position.y), _size.x, _size.y};
         SDL_RenderCopy(renderer, _texture, nullptr, &destRect);

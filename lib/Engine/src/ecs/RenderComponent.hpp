@@ -14,6 +14,7 @@ public:
 	void release() override;
 
     bool initialize(TransformComponent* transformComponent, SDL_Texture* texture);
+	void setTexture(SDL_Texture* texture);
 
     void draw(SDL_Renderer* renderer);
 

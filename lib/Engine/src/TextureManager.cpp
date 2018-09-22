@@ -38,6 +38,16 @@ SDL_Texture* TextureManager::loadTexture(const TextureID textureID) {
     return texture;
 }
 
+void TextureManager::preloadAllTextures() {
+	for(int i = static_cast<int>(TextureID::Background); i < static_cast<int>(TextureID::COUNT); i++) {
+		loadTexture(static_cast<TextureID>(i));
+	}
+}
+
+SDL_Texture* TextureManager::getRandomGemTexture() {
+	return loadTexture(static_cast<TextureID>(1 + rand() % (static_cast<int>(TextureID::COUNT) - 1)));
+}
+
 std::string TextureManager::fullPathForTextureID(TextureID textureID) const {
     std::string basePath(RESOURCES_DIR);
 
