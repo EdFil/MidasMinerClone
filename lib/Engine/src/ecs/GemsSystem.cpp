@@ -4,6 +4,9 @@
 
 #include "GemsSystem.hpp"
 
+#include <algorithm>    // std::shuffle
+#include <random>
+
 #include <SDL_render.h>
 #include <SDL_log.h>
 #include <SDL_assert.h>
@@ -13,6 +16,7 @@
 #include "TransformSystem.hpp"
 #include "RenderSystem.hpp"
 #include "TextureManager.hpp"
+#include <ctime>
 
 static const int k_numGemsX = 8;
 static const int k_numGemsY = 8;
@@ -30,6 +34,7 @@ glm::vec2 positionForIndex(int x, int y) {
 bool GemsSystem::initialize(Engine* engine) {
     _gameState = GameState::Initializing;
     _engine = engine;
+	randomGenerator.seed(time(nullptr));
 	_engine->textureManager()->preloadAllTextures();
 
     for(GemsComponent& component : _components) {
@@ -93,7 +98,8 @@ void GemsSystem::update(float delta) {
             	render->setIsVisible(true);
 
                 auto gem = static_cast<GemsComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Gem));
-                gem->setIsActive(true);
+				gem->setGemType(randomPossibleGemForIndex({x, vacantIndex}));
+            	gem->setIsActive(true);
 				gem->onAddedToBoard(x, vacantIndex);
 
                 _board[x][vacantIndex] = entityToBeSpawned;
@@ -139,4 +145,86 @@ GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
 void GemsSystem::releaseComponent(GemsComponent *component) {
     component->state = State::Unused;
     component->cleanup();
+}
+
+BackToBackCount GemsSystem::backToBackCountOnIndex(const glm::vec<2, int> index, const GemType gemType) {
+	BackToBackCount count{ 0, 0, 0, 0 };
+
+	// Search left
+	for(int x = index.x - 1; x >= 0; x--) {
+		Entity* entity = _board[x][index.y];
+		if(entity == nullptr) {
+			break;
+		}
+		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+		if(gemsComponent->gemType() != gemType) {
+			break;
+		}
+
+		count.left++;
+	}
+
+	// Search right
+	for (int x = index.x + 1; x < k_numGemsX; x++) {
+		Entity* entity = _board[x][index.y];
+		if (entity == nullptr) {
+			break;
+		}
+		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+		if (gemsComponent->gemType() != gemType) {
+			break;
+		}
+
+		count.right++;
+	}
+
+	// Search up
+	for (int y = index.y + 1; y < k_numGemsY; y++) {
+		Entity* entity = _board[index.x][y];
+		if (entity == nullptr) {
+			break;
+		}
+		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+		if (gemsComponent->gemType() != gemType) {
+			break;
+		}
+
+		count.up++;
+	}
+
+	// Search down
+	for (int y = index.y - 1; y >= 0; y--) {
+		Entity* entity = _board[index.x][y];
+		if (entity == nullptr) {
+			break;
+		}
+		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+		if (gemsComponent->gemType() != gemType) {
+			break;
+		}
+
+		count.down++;
+	}
+
+	return count;
+}
+
+GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
+	// Generate our randomized Gem picking order
+	GemType possibleGems[static_cast<int>(GemType::COUNT)];
+	for(int i = 0; i < static_cast<int>(GemType::COUNT); i++) {
+		possibleGems[i] = static_cast<GemType>(i);
+	}
+
+	std::shuffle(std::begin(possibleGems), std::end(possibleGems), randomGenerator);
+
+	// Select a valid gem for this position
+	for(GemType gemType : possibleGems) {
+		BackToBackCount count = backToBackCountOnIndex(index, gemType);
+		if (count.up < 2 && count.down < 2 && count.left < 2 && count.right < 2) {
+			return gemType;
+		}
+	}
+
+	return GemType::Green;
 }

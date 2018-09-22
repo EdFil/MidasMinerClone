@@ -6,7 +6,20 @@
 
 #include "GemsSystem.hpp"
 #include "Engine.hpp"
+#include "TextureManager.hpp"
 
+TextureID textureIDForGemType(const GemType gemType) {
+	switch (gemType) {
+		case GemType::Blue: return TextureID::Blue;
+		case GemType::Green: return TextureID::Green;
+		case GemType::Purple: return TextureID::Purple;
+		case GemType::Red: return TextureID::Red;
+		case GemType::Yellow: return TextureID::Yellow;
+		default:
+			SDL_assert(false);
+			return TextureID::Blue;
+	}
+}
 
 void GemsComponent::release() {
     SDL_assert(_system != nullptr);
@@ -39,6 +52,13 @@ void GemsComponent::onRemovedFromBoard() {
 	_boardIndex = { -1, -1 };
 }
 
+void GemsComponent::setGemType(GemType gemType) {
+	SDL_assert(gemType != GemType::INVALID);
+
+	_gemType = gemType;
+	const auto texture = _system->engine()->textureManager()->loadTexture(textureIDForGemType(gemType));
+	_renderComponent->setTexture(texture);
+}
 
 void GemsComponent::setIsActive(bool value) {
     if(_isActive != value) {
