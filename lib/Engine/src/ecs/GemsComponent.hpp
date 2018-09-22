@@ -26,13 +26,18 @@ public:
     bool initialize(GemsSystem* system, RenderComponent* renderComponent);
     void cleanup();
 
-	void onAddedToBoard(int x, int y);
-	void onMovedInBoard(int toX, int toY);
+	void onAddedToBoard(const glm::vec<2, int>& index);
+	void onMovedInBoard(const glm::vec<2, int>& index);
 	void onRemovedFromBoard();
 
+	const glm::vec<2, int>& index() const { return _boardIndex; }
 	GemType gemType() const { return _gemType; }
+	GemsComponent* upGem() const { return _up; }
+	GemsComponent* downGem() const { return _down; }
+	GemsComponent* leftGem() const { return _left; }
+	GemsComponent* rightGem() const { return _right; }
+
 	void setGemType(GemType gemType);
-    void setIsActive(bool value);
 
     void onLeftMouseDown(int x, int y) override;
     void onLeftMouseUp(int x, int y) override;
@@ -40,8 +45,14 @@ public:
 
 private:
 	glm::vec<2, int> _boardIndex{-1, -1};
+	GemsComponent* _up = nullptr;
+	GemsComponent* _down = nullptr;
+	GemsComponent* _left = nullptr;
+	GemsComponent* _right = nullptr;
     GemsSystem* _system = nullptr;
     RenderComponent* _renderComponent = nullptr;
 	GemType _gemType = GemType::INVALID;
     bool _isActive = false;
+
+    friend GemsSystem;
 };

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <glm/vec2.hpp>
+
+static const int k_numGemsX = 8;
+static const int k_numGemsY = 8;
 constexpr int k_numMaxEntities = 100;
 constexpr int k_numMaxTransformComponents = k_numMaxEntities;
 constexpr int k_numMaxRenderComponents = k_numMaxEntities;

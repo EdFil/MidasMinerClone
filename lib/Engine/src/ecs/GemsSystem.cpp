@@ -18,16 +18,14 @@
 #include "TextureManager.hpp"
 #include <ctime>
 
-static const int k_numGemsX = 8;
-static const int k_numGemsY = 8;
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
 static const glm::vec2 k_startPosition = glm::vec2(320, 92);
 static const int k_spawnHeight = 60;
 
-glm::vec2 positionForIndex(int x, int y) {
-    y = k_numGemsY - y;
-    return glm::vec2(k_startPosition.x + k_gemPadding * (x + 1) + x * k_gemSize,
+glm::vec2 positionForIndex(const glm::vec<2, int> index) {
+    int y = k_numGemsY - index.y;
+    return glm::vec2(k_startPosition.x + k_gemPadding * (index.x + 1) + index.x * k_gemSize,
                      k_startPosition.y + k_gemPadding * (y + 1) + y * k_gemSize);
 }
 
@@ -43,6 +41,7 @@ bool GemsSystem::initialize(Engine* engine) {
 
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
+	_dirty.reserve(numGems);
     for(size_t i = 0; i < numGems; i++) {
         auto transform = engine->transformSystem()->createComponent();
 
@@ -63,72 +62,76 @@ bool GemsSystem::initialize(Engine* engine) {
 }
 
 void GemsSystem::update(float delta) {
-	//if(_gameState == GameState::Initializing) {
-        for(int x = 0; x < k_numGemsX; x++) {
-            // Start going from bottom to top to find a vacant position
-            int vacantIndex = 0;
-            for(; vacantIndex < k_numGemsY && _board[x][vacantIndex] != nullptr; vacantIndex++);
+    for(int x = 0; x < k_numGemsX; x++) {
+        // Start going from bottom to top to find a vacant position
+        int vacantIndex = 0;
+        for(; vacantIndex < k_numGemsY && _board[x][vacantIndex] != nullptr; vacantIndex++);
 
-            // We have reached the top, nothing to do in this column
-            if(vacantIndex == k_numGemsY)
-                continue;
+        // We have reached the top, nothing to do in this column
+        if(vacantIndex == k_numGemsY)
+            continue;
 
-            // Find the next place with a gem
-            int occupiedIndex = vacantIndex;
-            for(; occupiedIndex < k_numGemsY && _board[x][occupiedIndex] == nullptr; occupiedIndex++);
+        // Find the next place with a gem
+        int occupiedIndex = vacantIndex;
+        for(; occupiedIndex < k_numGemsY && _board[x][occupiedIndex] == nullptr; occupiedIndex++);
 
-            if(occupiedIndex != k_numGemsY) {
-                // We didn't reach the top. Found a hole!! Make things fall!
-                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Make gem from [%d][%d] fall to [%d][%d]", x, occupiedIndex, x, vacantIndex);
-				moveEntityFromTo(x, occupiedIndex, x, vacantIndex);
+		// If we didn't reach the top, means we found a hole!! Make things fall!
+		for (; occupiedIndex < k_numGemsY; occupiedIndex++) {
+			if(_board[x][occupiedIndex] == nullptr) continue; // If we have powers, it's possible to have multiple holes
 
-            } else {
-                // Reached the top! Need to spawn new gems!
-                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Spawn a new gem to [%d][%d]", x, vacantIndex);
-                SDL_assert(!_waiting.empty());
+			moveEntityFromTo({x, occupiedIndex}, {x, vacantIndex});
+			vacantIndex++;
+		}
 
-                Entity* entityToBeSpawned = _waiting.back();
-                _waiting.pop_back();
+		// If by this point vacantIndex is not on the top, we need to spawn in new gems
+		for (; vacantIndex < k_numGemsY; vacantIndex++) {
+			createNewRandomGemOnIndex({x, vacantIndex});
+		}
 
-                auto transform = static_cast<TransformComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Transform));
-                transform->setPosition(positionForIndex(x, vacantIndex));
 
-                auto render = static_cast<RenderComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Render));
-				render->setTexture(_engine->textureManager()->getRandomGemTexture());
-            	render->setIsVisible(true);
+		if(!_dirty.empty()) {
+			for(Entity* entity : _dirty) {
+				auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+			//	BackToBackCount count = backToBackCountOnIndex(gem->index(), gem->gemType());
+			//	if(count.numGems >= 3) {
+			//		for(int i = 0; i < count.numGems; i++) {
+			//			removeEntity(count.gems[i]->index());
+			//		}
+			//	}
+			}
 
-                auto gem = static_cast<GemsComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Gem));
-				gem->setGemType(randomPossibleGemForIndex({x, vacantIndex}));
-            	gem->setIsActive(true);
-				gem->onAddedToBoard(x, vacantIndex);
-
-                _board[x][vacantIndex] = entityToBeSpawned;
-            }
-
-        }
-    //}
+			_dirty.clear();
+		}
+    }
 }
 
-void GemsSystem::moveEntityFromTo(int fromX, int fromY, int toX, int toY) {
-	std::swap(_board[toX][toY], _board[fromX][fromY]);
-	auto* transform = static_cast<TransformComponent*>(_board[toX][toY]->getComponentWithType(ComponentType::Transform));
-	transform->setPosition(positionForIndex(toX, toY));
-	auto* gem = static_cast<GemsComponent*>(_board[toX][toY]->getComponentWithType(ComponentType::Gem));
-	gem->onMovedInBoard(toX, toY);
+void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex) {
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Moving Gem from [%d][%d] to [%d][%d]", fromIndex.x, fromIndex.y, toIndex.x, toIndex.y);
+
+	std::swap(_board[fromIndex.x][fromIndex.y], _board[toIndex.x][toIndex.y]);
+	Entity* toEntity = _board[toIndex.x][toIndex.y];
+
+	auto* transform = static_cast<TransformComponent*>(toEntity->getComponentWithType(ComponentType::Transform));
+	transform->setPosition(positionForIndex(toIndex));
+
+	auto* gem = static_cast<GemsComponent*>(toEntity->getComponentWithType(ComponentType::Gem));
+	gem->onMovedInBoard(toIndex);
+	updateGemPointers(gem);
+
+	_dirty.push_back(toEntity);
 }
 
-void GemsSystem::removeEntity(int x, int y) {
-	Entity* entity = _board[x][y];
-	_board[x][y] = nullptr;
+void GemsSystem::removeEntity(const glm::ivec2 index) {
+	Entity* entity = _board[index.x][index.y];
 
 	auto render = static_cast<RenderComponent*>(entity->getComponentWithType(ComponentType::Render));
 	render->setIsVisible(false);
 
 	auto gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-	gem->setIsActive(false);
 	gem->onRemovedFromBoard();
 	
 	_waiting.push_back(entity);
+	_board[index.x][index.y] = nullptr;
 }
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
@@ -147,65 +150,54 @@ void GemsSystem::releaseComponent(GemsComponent *component) {
     component->cleanup();
 }
 
-BackToBackCount GemsSystem::backToBackCountOnIndex(const glm::vec<2, int> index, const GemType gemType) {
-	BackToBackCount count{ 0, 0, 0, 0 };
+void GemsSystem::createNewRandomGemOnIndex(const glm::vec<2, int>& index) {
+	SDL_assert(!_waiting.empty());
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Spawn a new gem to [%d][%d]", index.x, index.y);
 
-	// Search left
-	for(int x = index.x - 1; x >= 0; x--) {
-		Entity* entity = _board[x][index.y];
-		if(entity == nullptr) {
-			break;
-		}
-		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-		if(gemsComponent->gemType() != gemType) {
-			break;
-		}
+	Entity* entityToBeSpawned = _waiting.back();
+	_waiting.pop_back();
 
-		count.left++;
+	auto transform = static_cast<TransformComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Transform));
+	transform->setPosition(positionForIndex(index));
+
+	auto render = static_cast<RenderComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Render));
+	render->setIsVisible(true);
+
+	auto gem = static_cast<GemsComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Gem));
+	gem->setGemType(randomPossibleGemForIndex(index));
+	gem->onAddedToBoard(index);
+
+	updateGemPointers(gem);
+
+	_board[index.x][index.y] = entityToBeSpawned;
+}
+
+BackToBackCount GemsSystem::backToBackCountOnIndex(const glm::ivec2& index, const GemType gemType) {
+	BackToBackCount count;
+	std::array<GemsComponent*, k_numMaxGemsComponents> checkedGems = { nullptr };
+	unsigned numCheckedGems = 0;
+	std::array<GemsComponent*, k_numMaxGemsComponents> gemsToCheck = { nullptr };
+	unsigned numGemsToCheck = 0;
+
+	auto currentGem = static_cast<GemsComponent*>(_board[index.x][index.y]->getComponentWithType(ComponentType::Gem));
+	gemsToCheck[numGemsToCheck++] = currentGem;
+
+	while(numGemsToCheck > 0) {
+		currentGem = gemsToCheck[--numGemsToCheck];
+		if(std::find(checkedGems.cbegin(), checkedGems.cend(), currentGem) != checkedGems.cend()) {
+			continue;
+		}
+		checkedGems[numCheckedGems++] = currentGem;
+
+		if(currentGem->gemType() == gemType) {
+			count.gems[count.numGems++] = currentGem;
+			if (currentGem->leftGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->leftGem();
+			if (currentGem->rightGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->rightGem();
+			if (currentGem->upGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->upGem();
+			if (currentGem->downGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->downGem();
+		}
 	}
-
-	// Search right
-	for (int x = index.x + 1; x < k_numGemsX; x++) {
-		Entity* entity = _board[x][index.y];
-		if (entity == nullptr) {
-			break;
-		}
-		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-		if (gemsComponent->gemType() != gemType) {
-			break;
-		}
-
-		count.right++;
-	}
-
-	// Search up
-	for (int y = index.y + 1; y < k_numGemsY; y++) {
-		Entity* entity = _board[index.x][y];
-		if (entity == nullptr) {
-			break;
-		}
-		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-		if (gemsComponent->gemType() != gemType) {
-			break;
-		}
-
-		count.up++;
-	}
-
-	// Search down
-	for (int y = index.y - 1; y >= 0; y--) {
-		Entity* entity = _board[index.x][y];
-		if (entity == nullptr) {
-			break;
-		}
-		const auto gemsComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-		if (gemsComponent->gemType() != gemType) {
-			break;
-		}
-
-		count.down++;
-	}
-
+	
 	return count;
 }
 
@@ -220,11 +212,61 @@ GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
 
 	// Select a valid gem for this position
 	for(GemType gemType : possibleGems) {
-		BackToBackCount count = backToBackCountOnIndex(index, gemType);
-		if (count.up < 2 && count.down < 2 && count.left < 2 && count.right < 2) {
+		//BackToBackCount count = backToBackCountOnIndex(index, gemType);
+		//if (count.numEntities < 2) {
 			return gemType;
-		}
+		//}
 	}
 
+	SDL_assert(false); // No possible Gem?
 	return GemType::Green;
+}
+
+void GemsSystem::updateGemPointers(GemsComponent* gemComponent) {
+	SDL_assert(gemComponent != nullptr);
+	const auto& index = gemComponent->index();
+
+	if (index.x > 0) {
+		Entity* entity = _board[index.x - 1][index.y];
+		if (entity != nullptr) {
+			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+			component->_right = gemComponent;
+			gemComponent->_left = component;
+		}
+	} else {
+		gemComponent->_left = nullptr;
+	}
+
+	if (index.x < k_numGemsX) {
+		Entity* entity = _board[index.x + 1][index.y];
+		if (entity != nullptr) {
+			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+			component->_left = gemComponent;
+			gemComponent->_right = component;
+		}
+	} else {
+		gemComponent->_right = nullptr;
+	}
+
+	if (index.y > 0) {
+		Entity* entity = _board[index.x][index.y - 1];
+		if (entity != nullptr) {
+			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+			component->_up = gemComponent;
+			gemComponent->_down = component;
+		}
+	} else {
+		gemComponent->_down = nullptr;
+	}
+
+	if (index.y > 0) {
+		Entity* entity = _board[index.x][index.y + 1];
+		if (entity != nullptr) {
+			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+			component->_down = gemComponent;
+			gemComponent->_up = component;
+		}
+	} else {
+		gemComponent->_up = nullptr;
+	}
 }

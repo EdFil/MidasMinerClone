@@ -36,20 +36,35 @@ bool GemsComponent::initialize(GemsSystem* system, RenderComponent* renderCompon
 }
 
 void GemsComponent::cleanup() {
+    SDL_assert(!_isActive);
+
     _renderComponent = nullptr;
-    setIsActive(false);
 }
 
-void GemsComponent::onAddedToBoard(int x, int y) {
-	_boardIndex = { x, y };
+void GemsComponent::onAddedToBoard(const glm::vec<2, int>& index) {
+    SDL_assert(!_isActive);
+    SDL_assert(_boardIndex.x == -1 && _boardIndex.y == -1);
+
+	_boardIndex = index;
+    _isActive = true;
+    _system->engine()->eventDispatcher()->registerForMouseEvents(this);
 }
 
-void GemsComponent::onMovedInBoard(int toX, int toY) {
-	_boardIndex = { toX, toY };
+void GemsComponent::onMovedInBoard(const glm::vec<2, int>& index) {
+    SDL_assert(_isActive);
+    SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
+
+	_boardIndex = index;
 }
 
 void GemsComponent::onRemovedFromBoard() {
-	_boardIndex = { -1, -1 };
+    SDL_assert(_isActive);
+    SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
+
+	_left = _right = _up = _down = nullptr;
+    _boardIndex = { -1, -1 };
+	_isActive = false;
+    _system->engine()->eventDispatcher()->unregisterForMouseEvents(this);
 }
 
 void GemsComponent::setGemType(GemType gemType) {
@@ -58,18 +73,6 @@ void GemsComponent::setGemType(GemType gemType) {
 	_gemType = gemType;
 	const auto texture = _system->engine()->textureManager()->loadTexture(textureIDForGemType(gemType));
 	_renderComponent->setTexture(texture);
-}
-
-void GemsComponent::setIsActive(bool value) {
-    if(_isActive != value) {
-        _isActive = value;
-
-        if(_isActive) {
-            _system->engine()->eventDispatcher()->registerForMouseEvents(this);
-        } else {
-            _system->engine()->eventDispatcher()->unregisterForMouseEvents(this);
-        }
-    }
 }
 
 void GemsComponent::onLeftMouseDown(int x, int y) {
@@ -81,7 +84,13 @@ void GemsComponent::onLeftMouseDown(int x, int y) {
     SDL_Point mousePosition{x, y};
 
     if(SDL_PointInRect(&mousePosition, &gemRect)) {
-		_system->removeEntity(_boardIndex.x, _boardIndex.y);
+		auto coisa = _system->backToBackCountOnIndex(_boardIndex, _gemType);
+		for(int i = 0; i < coisa.numGems; i++) {
+			_system->removeEntity(coisa.gems[i]->index());
+		}
+
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Count = %d", coisa.numGems);
+		//_system->removeEntity({_boardIndex.x, _boardIndex.y});
     }
 }
 

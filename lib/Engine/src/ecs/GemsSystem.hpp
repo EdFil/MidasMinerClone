@@ -19,7 +19,8 @@ enum class GameState {
 };
 
 struct BackToBackCount {
-	short up, down, left, right;
+	GemsComponent* gems[k_numMaxGemsComponents] {nullptr};
+	unsigned short numGems = 0;
 };
 
 class GemsSystem {
@@ -30,22 +31,26 @@ public:
 
     Engine* engine() const { return _engine; }
 
-	void moveEntityFromTo(int x1, int y1, int x2, int y2);
-	void removeEntity(int x, int y);
+	void moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
+	void removeEntity(const glm::ivec2 index);
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
 
-	BackToBackCount backToBackCountOnIndex(const glm::vec<2, int> index, const GemType gemType);
-	GemType randomPossibleGemForIndex(const glm::vec<2, int>& index);
+	void createNewRandomGemOnIndex(const glm::ivec2& index);
+	BackToBackCount backToBackCountOnIndex(const glm::ivec2& index, const GemType gemType);
+	GemType randomPossibleGemForIndex(const glm::ivec2& index);
 
 private:
 	std::default_random_engine randomGenerator;
     std::array<GemsComponent, k_numMaxGemsComponents> _components;
     std::vector<Entity*> _waiting; // 8*8
+	std::vector<Entity*> _dirty; // 8*8
     Engine* _engine = nullptr;
     Entity* _board[8][8] = { nullptr };
     GameState _gameState = GameState::INVALID;
     long _lastTimeSpawned[8] = {0};
+
+	void updateGemPointers(GemsComponent* gemComponent);
 };
 
