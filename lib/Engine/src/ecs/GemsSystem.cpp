@@ -92,12 +92,15 @@ void GemsSystem::update(float delta) {
 		if(!_dirty.empty()) {
 			for(Entity* entity : _dirty) {
 				auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			//	BackToBackCount count = backToBackCountOnIndex(gem->index(), gem->gemType());
-			//	if(count.numGems >= 3) {
-			//		for(int i = 0; i < count.numGems; i++) {
-			//			removeEntity(count.gems[i]->index());
-			//		}
-			//	}
+				if (gem->_isActive) {
+					BackToBackCount backToBackGems = backToBackCountOnIndex(gem->index(), gem->gemType());
+					if (backToBackGems.numGems >= 3) {
+						for (int i = 0; i < backToBackGems.numGems; i++) {
+							if (backToBackGems.gems[i]->_isActive)
+								removeEntity(backToBackGems.gems[i]->index());
+						}
+					}
+				}
 			}
 
 			_dirty.clear();
@@ -179,11 +182,18 @@ BackToBackCount GemsSystem::backToBackCountOnIndex(const glm::ivec2& index, cons
 	std::array<GemsComponent*, k_numMaxGemsComponents> gemsToCheck = { nullptr };
 	unsigned numGemsToCheck = 0;
 
-	auto currentGem = static_cast<GemsComponent*>(_board[index.x][index.y]->getComponentWithType(ComponentType::Gem));
-	gemsToCheck[numGemsToCheck++] = currentGem;
+	Entity* entity = _board[index.x][index.y];
+	if (entity != nullptr) {
+		gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+	} else {
+		if (index.x > 0 && _board[index.x - 1][index.y] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x - 1][index.y]->getComponentWithType(ComponentType::Gem));
+		if (index.x < k_numGemsX && _board[index.x + 1][index.y] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x + 1][index.y]->getComponentWithType(ComponentType::Gem));
+		if (index.y > 0 && _board[index.x - 1][index.y - 1] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x][index.y - 1]->getComponentWithType(ComponentType::Gem));
+		if (index.y < k_numGemsY && _board[index.x][index.y + 1] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x][index.y + 1]->getComponentWithType(ComponentType::Gem));
+	}
 
 	while(numGemsToCheck > 0) {
-		currentGem = gemsToCheck[--numGemsToCheck];
+		GemsComponent* currentGem = gemsToCheck[--numGemsToCheck];
 		if(std::find(checkedGems.cbegin(), checkedGems.cend(), currentGem) != checkedGems.cend()) {
 			continue;
 		}
@@ -212,10 +222,10 @@ GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
 
 	// Select a valid gem for this position
 	for(GemType gemType : possibleGems) {
-		//BackToBackCount count = backToBackCountOnIndex(index, gemType);
-		//if (count.numEntities < 2) {
+		BackToBackCount backToBackCount = backToBackCountOnIndex(index, gemType);
+		if (backToBackCount.numGems < 2) {
 			return gemType;
-		//}
+		}
 	}
 
 	SDL_assert(false); // No possible Gem?
