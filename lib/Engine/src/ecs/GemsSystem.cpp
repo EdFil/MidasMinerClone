@@ -93,11 +93,17 @@ void GemsSystem::update(float delta) {
 			for(Entity* entity : _dirty) {
 				auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
 				if (gem->_isActive) {
-					BackToBackCount backToBackGems = backToBackCountOnIndex(gem->index(), gem->gemType());
-					if (backToBackGems.numGems >= 3) {
-						for (int i = 0; i < backToBackGems.numGems; i++) {
-							if (backToBackGems.gems[i]->_isActive)
-								removeEntity(backToBackGems.gems[i]->index());
+					const NewBackToBackCount backToBackGems = theNewBackToBackCount(gem->index(), gem->gemType());
+					if (backToBackGems.numHorizontalGems >= 3) {
+						for (int i = 0; i < backToBackGems.numHorizontalGems; i++) {
+							if (backToBackGems.horizontalGems[i]->_isActive)
+								removeEntity(backToBackGems.horizontalGems[i]->index());
+						}
+					}
+					if (backToBackGems.numVerticalGems >= 3) {
+						for (int i = 0; i < backToBackGems.numVerticalGems; i++) {
+							if (backToBackGems.verticalGems[i]->_isActive)
+								removeEntity(backToBackGems.verticalGems[i]->index());
 						}
 					}
 				}
@@ -211,6 +217,69 @@ BackToBackCount GemsSystem::backToBackCountOnIndex(const glm::ivec2& index, cons
 	return count;
 }
 
+NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, const GemType gemType) {
+	NewBackToBackCount count;
+
+	// Auxiliary variables
+	GemsComponent* leftGem = nullptr;
+	GemsComponent* rightGem = nullptr;
+	GemsComponent* upGem = nullptr;
+	GemsComponent* downGem = nullptr;
+
+	// Setup auxiliary variables
+	Entity* entity = _board[index.x][index.y];
+	if (entity != nullptr) {
+		const auto gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+		leftGem = gemComponent->leftGem();
+		rightGem = gemComponent->rightGem();
+		upGem = gemComponent->upGem();
+		downGem = gemComponent->downGem();
+
+		// Count this index for both horizontal and vertical because this is the root
+		count.horizontalGems[count.numHorizontalGems++] = gemComponent;
+		count.verticalGems[count.numVerticalGems++] = gemComponent;
+	} else {
+		if (index.x > 0 && _board[index.x - 1][index.y] != nullptr) {
+			leftGem = static_cast<GemsComponent*>(_board[index.x - 1][index.y]->getComponentWithType(ComponentType::Gem));
+		}
+
+		if (index.x < k_numGemsX && _board[index.x + 1][index.y] != nullptr) {
+			rightGem = static_cast<GemsComponent*>(_board[index.x + 1][index.y]->getComponentWithType(ComponentType::Gem));
+		}
+
+		if (index.y > 0 && _board[index.x][index.y - 1] != nullptr) {
+			downGem = static_cast<GemsComponent*>(_board[index.x][index.y - 1]->getComponentWithType(ComponentType::Gem));
+		}
+
+		if (index.y < k_numGemsY && _board[index.x][index.y + 1] != nullptr) {
+			upGem = static_cast<GemsComponent*>(_board[index.x][index.y + 1]->getComponentWithType(ComponentType::Gem));
+		}
+	}
+
+	// Gather gems to the left
+	for (; leftGem != nullptr && leftGem->gemType() == gemType; leftGem = leftGem->leftGem()) {
+		count.horizontalGems[count.numHorizontalGems++] = leftGem;
+	}
+
+	// Gather gems to the right
+	for (; rightGem != nullptr && rightGem->gemType() == gemType; rightGem = rightGem->rightGem()) {
+		count.horizontalGems[count.numHorizontalGems++] = rightGem;
+	}
+
+	// Gather downwards gems 
+	for (; downGem != nullptr && downGem->gemType() == gemType; downGem = downGem->downGem()) {
+		count.verticalGems[count.numVerticalGems++] = downGem;
+	}
+
+	// Gather upwards gems
+	for (; upGem != nullptr && upGem->gemType() == gemType; upGem = upGem->upGem()) {
+		count.verticalGems[count.numVerticalGems++] = upGem;
+	}
+
+	return count;
+}
+
+
 GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
 	// Generate our randomized Gem picking order
 	GemType possibleGems[static_cast<int>(GemType::COUNT)];
@@ -222,8 +291,8 @@ GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
 
 	// Select a valid gem for this position
 	for(GemType gemType : possibleGems) {
-		BackToBackCount backToBackCount = backToBackCountOnIndex(index, gemType);
-		if (backToBackCount.numGems < 2) {
+		NewBackToBackCount backToBackCount = theNewBackToBackCount(index, gemType);
+		if (backToBackCount.numVerticalGems < 2 && backToBackCount.numHorizontalGems < 2) {
 			return gemType;
 		}
 	}

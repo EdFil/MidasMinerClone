@@ -84,13 +84,13 @@ void GemsComponent::onLeftMouseDown(int x, int y) {
     SDL_Point mousePosition{x, y};
 
     if(SDL_PointInRect(&mousePosition, &gemRect)) {
-		auto coisa = _system->backToBackCountOnIndex(_boardIndex, _gemType);
-		for(int i = 0; i < coisa.numGems; i++) {
+		//auto coisa = _system->theNewBackToBackCount(_boardIndex, _gemType);	
+		/*for(int i = 0; i < coisa.numGems; i++) {
 			_system->removeEntity(coisa.gems[i]->index());
-		}
+		}*/
 
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Count = %d", coisa.numGems);
-		//_system->removeEntity({_boardIndex.x, _boardIndex.y});
+		//SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Horizontal = %d Vertical = %d", coisa.numHorizontalGems, coisa.numVerticalGems);
+		_system->removeEntity({_boardIndex.x, _boardIndex.y});
     }
 }
 

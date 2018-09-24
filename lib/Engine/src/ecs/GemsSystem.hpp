@@ -19,9 +19,17 @@ enum class GameState {
 };
 
 struct BackToBackCount {
-	GemsComponent* gems[k_numMaxGemsComponents] {nullptr};
+	GemsComponent* gems[k_numMaxGemsComponents]{ nullptr };
 	unsigned short numGems = 0;
 };
+
+struct NewBackToBackCount {
+	GemsComponent* horizontalGems[k_numGemsX]{ nullptr };
+	unsigned short numHorizontalGems = 0;
+	GemsComponent* verticalGems[k_numGemsY]{ nullptr };
+	unsigned short numVerticalGems = 0;
+};
+
 
 class GemsSystem {
 public:
@@ -39,6 +47,7 @@ public:
 
 	void createNewRandomGemOnIndex(const glm::ivec2& index);
 	BackToBackCount backToBackCountOnIndex(const glm::ivec2& index, const GemType gemType);
+	NewBackToBackCount theNewBackToBackCount(const glm::ivec2& index, const GemType gemType);
 	GemType randomPossibleGemForIndex(const glm::ivec2& index);
 
 private:

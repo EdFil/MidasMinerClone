@@ -25,6 +25,8 @@ struct Component {
 	ComponentType type;
     State state = State::Unused;
 
+	Entity* entity() const { return _entity; }
+
 	virtual void release() = 0;
 };
 
