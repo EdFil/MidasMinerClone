@@ -39,9 +39,9 @@ public:
 
 	void setGemType(GemType gemType);
 
-    void onLeftMouseDown(int x, int y) override;
-    void onLeftMouseUp(int x, int y) override;
-    void onMouseMotion(int x, int y) override;
+	bool onLeftMouseDown(int x, int y) override;
+	bool onLeftMouseUp(int x, int y) override;
+	bool onMouseMotion(int x, int y) override;
 
 private:
 	glm::vec<2, int> _boardIndex{-1, -1};

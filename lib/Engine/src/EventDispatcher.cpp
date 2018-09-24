@@ -60,7 +60,8 @@ void EventDispatcher::processOnMouseDown(const SDL_MouseButtonEvent& button) {
     switch (button.button) {
         case SDL_BUTTON_LEFT:
             for(MouseEventDelegate* delegate : _mouseEventDelegates) {
-                delegate->onLeftMouseDown(button.x, button.y);
+				if (delegate->onLeftMouseDown(button.x, button.y))
+					break;
             }
             break;
         default:
@@ -72,7 +73,8 @@ void EventDispatcher::processOnMouseUp(const SDL_MouseButtonEvent& button) {
     switch (button.button) {
         case SDL_BUTTON_LEFT:
             for(MouseEventDelegate* delegate : _mouseEventDelegates) {
-                delegate->onLeftMouseUp(button.x, button.y);
+				if (delegate->onLeftMouseUp(button.x, button.y))
+					break;
             }
             break;
         default:
@@ -82,6 +84,7 @@ void EventDispatcher::processOnMouseUp(const SDL_MouseButtonEvent& button) {
 
 void EventDispatcher::processOnMouseMotion(const SDL_MouseMotionEvent& motion) {
     for(MouseEventDelegate* delegate : _mouseEventDelegates) {
-        delegate->onMouseMotion(motion.x, motion.y);
+		if (delegate->onMouseMotion(motion.x, motion.y))
+			break;
     }
 }

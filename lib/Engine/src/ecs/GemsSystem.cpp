@@ -17,6 +17,7 @@
 #include "RenderSystem.hpp"
 #include "TextureManager.hpp"
 #include <ctime>
+#include "glm/detail/func_geometric.inl"
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
@@ -42,6 +43,8 @@ bool GemsSystem::initialize(Engine* engine) {
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
 	_dirty.reserve(numGems);
+	_swapedEntities.reserve(2);
+
     for(size_t i = 0; i < numGems; i++) {
         auto transform = engine->transformSystem()->createComponent();
 
@@ -62,6 +65,32 @@ bool GemsSystem::initialize(Engine* engine) {
 }
 
 void GemsSystem::update(float delta) {
+	if (!_swapedEntities.empty()) {
+		bool wasSwapValid = false;
+		for (Entity* entity : _swapedEntities) {
+			GemsComponent* gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
+			if (gemComponent->_isActive) {
+				NewBackToBackCount count = theNewBackToBackCount(gemComponent->index(), gemComponent->gemType());
+				if (count.numHorizontalGems > 2) {
+					wasSwapValid = true;
+					for (int i = 0; i < count.numHorizontalGems; i++)
+						removeEntity(count.horizontalGems[i]->index());
+				}
+				if (count.numVerticalGems > 2) {
+					wasSwapValid = true;
+					for (int i = 0; i < count.numVerticalGems; i++)
+						removeEntity(count.verticalGems[i]->index());
+				}
+			}
+		}
+
+		if (!wasSwapValid) {
+			cancelGemSwap();
+		}
+
+		_swapedEntities.clear();
+	}
+
     for(int x = 0; x < k_numGemsX; x++) {
         // Start going from bottom to top to find a vacant position
         int vacantIndex = 0;
@@ -87,7 +116,6 @@ void GemsSystem::update(float delta) {
 		for (; vacantIndex < k_numGemsY; vacantIndex++) {
 			createNewRandomGemOnIndex({x, vacantIndex});
 		}
-
 
 		if(!_dirty.empty()) {
 			for(Entity* entity : _dirty) {
@@ -130,6 +158,62 @@ void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2&
 	_dirty.push_back(toEntity);
 }
 
+void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent) {
+	Entity* firstEntity = firstComponent->entity();
+	Entity* secondEntity = secondComponent->entity();
+	TransformComponent* firstTransform = static_cast<TransformComponent*>(firstEntity->getComponentWithType(ComponentType::Transform));
+	TransformComponent* secondTransform = static_cast<TransformComponent*>(secondEntity->getComponentWithType(ComponentType::Transform));
+
+	// Swap positions
+	const auto firstPosition = firstTransform->position();
+	firstTransform->setPosition(secondTransform->position());
+	secondTransform->setPosition(firstPosition);
+
+	// Swap on the board
+	std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
+
+	// Swap indexes
+	const auto firstIndex = firstComponent->index();
+	firstComponent->onMovedInBoard(secondComponent->index());
+	secondComponent->onMovedInBoard(firstIndex);
+
+
+	updateGemPointers(firstComponent);
+	updateGemPointers(secondComponent);
+
+
+	// Save entities to check if the swap was valid
+	_swapedEntities.push_back(firstEntity);
+	_swapedEntities.push_back(secondEntity);
+}
+
+void GemsSystem::cancelGemSwap() {
+	SDL_assert(!_swapedEntities.empty());
+
+	Entity* firstEntity = _swapedEntities[0];
+	Entity* secondEntity = _swapedEntities[1];
+	GemsComponent* firstComponent = static_cast<GemsComponent*>(firstEntity->getComponentWithType(ComponentType::Gem));
+	GemsComponent* secondComponent = static_cast<GemsComponent*>(secondEntity->getComponentWithType(ComponentType::Gem));
+	TransformComponent* firstTransform = static_cast<TransformComponent*>(firstEntity->getComponentWithType(ComponentType::Transform));
+	TransformComponent* secondTransform = static_cast<TransformComponent*>(secondEntity->getComponentWithType(ComponentType::Transform));
+
+	// Swap positions
+	const auto firstPosition = firstTransform->position();
+	firstTransform->setPosition(secondTransform->position());
+	secondTransform->setPosition(firstPosition);
+
+	// Swap on the board
+	std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
+
+	// Swap indexes
+	const auto firstIndex = firstComponent->index();
+	firstComponent->onMovedInBoard(secondComponent->index());
+	secondComponent->onMovedInBoard(firstIndex);
+
+	updateGemPointers(firstComponent);
+	updateGemPointers(secondComponent);
+}
+
 void GemsSystem::removeEntity(const glm::ivec2 index) {
 	Entity* entity = _board[index.x][index.y];
 
@@ -141,6 +225,18 @@ void GemsSystem::removeEntity(const glm::ivec2 index) {
 	
 	_waiting.push_back(entity);
 	_board[index.x][index.y] = nullptr;
+}
+
+void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
+	if(_selectedGem == nullptr) {
+		_selectedGem = gemComponent;
+	} else {
+		const glm::ivec2 gemDistance = glm::abs(_selectedGem->index() - gemComponent->index());
+		if(gemDistance.x + gemDistance.y == 1)
+			swapGems(gemComponent, _selectedGem);
+		
+		_selectedGem = nullptr;
+	}
 }
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {

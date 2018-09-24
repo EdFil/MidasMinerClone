@@ -40,7 +40,11 @@ public:
     Engine* engine() const { return _engine; }
 
 	void moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
+	void swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent);
+	void cancelGemSwap();
 	void removeEntity(const glm::ivec2 index);
+
+	void onGemClicked(GemsComponent* gemComponent);
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
@@ -55,8 +59,10 @@ private:
     std::array<GemsComponent, k_numMaxGemsComponents> _components;
     std::vector<Entity*> _waiting; // 8*8
 	std::vector<Entity*> _dirty; // 8*8
+	std::vector<Entity*> _swapedEntities; // 2
     Engine* _engine = nullptr;
     Entity* _board[8][8] = { nullptr };
+	GemsComponent* _selectedGem = nullptr;
     GameState _gameState = GameState::INVALID;
     long _lastTimeSpawned[8] = {0};
 

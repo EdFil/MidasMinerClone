@@ -75,7 +75,7 @@ void GemsComponent::setGemType(GemType gemType) {
 	_renderComponent->setTexture(texture);
 }
 
-void GemsComponent::onLeftMouseDown(int x, int y) {
+bool GemsComponent::onLeftMouseDown(int x, int y) {
     const glm::vec2& position = _renderComponent->transformComponent()->position();
     const glm::vec2& size = _renderComponent->size();
 
@@ -84,20 +84,17 @@ void GemsComponent::onLeftMouseDown(int x, int y) {
     SDL_Point mousePosition{x, y};
 
     if(SDL_PointInRect(&mousePosition, &gemRect)) {
-		//auto coisa = _system->theNewBackToBackCount(_boardIndex, _gemType);	
-		/*for(int i = 0; i < coisa.numGems; i++) {
-			_system->removeEntity(coisa.gems[i]->index());
-		}*/
-
-		//SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Horizontal = %d Vertical = %d", coisa.numHorizontalGems, coisa.numVerticalGems);
-		_system->removeEntity({_boardIndex.x, _boardIndex.y});
+		_system->onGemClicked(this);
+		return true;
     }
+
+	return false;
 }
 
-void GemsComponent::onLeftMouseUp(int x, int y) {
-
+bool GemsComponent::onLeftMouseUp(int x, int y) {
+	return false;
 }
 
-void GemsComponent::onMouseMotion(int x, int y) {
-
+bool GemsComponent::onMouseMotion(int x, int y) {
+	return false;
 }

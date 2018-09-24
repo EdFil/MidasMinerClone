@@ -12,9 +12,9 @@ public:
 
 class MouseEventDelegate {
 public:
-    virtual void onLeftMouseDown(int x, int y) = 0;
-    virtual void onLeftMouseUp(int x, int y) = 0;
-    virtual void onMouseMotion(int x, int y) = 0;
+    virtual bool onLeftMouseDown(int x, int y) = 0;
+    virtual bool onLeftMouseUp(int x, int y) = 0;
+    virtual bool onMouseMotion(int x, int y) = 0;
 };
 
 class EventDispatcher {
