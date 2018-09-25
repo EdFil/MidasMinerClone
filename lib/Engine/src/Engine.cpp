@@ -45,6 +45,7 @@ bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 	_renderSystem.initialize();
     _eventDispatcher->initialize();
 
+	_textureManager->preloadAllTextures();
     _eventDispatcher->registerForApplicationEvents(this);
 	setScene(std::move(scene));
 

@@ -4,6 +4,7 @@
 
 #include <Scene.hpp>
 
+class Entity;
 class GemsSystem;
 
 class GameScene : public Scene {
@@ -15,5 +16,6 @@ public:
 	void onDestroy() override;
 
 private:
+	Entity* _background{nullptr};
 	std::unique_ptr<GemsSystem> _gemsSystem;
 };

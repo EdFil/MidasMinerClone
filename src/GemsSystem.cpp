@@ -25,7 +25,7 @@ static const glm::vec2 k_startPosition = glm::vec2(320, 92);
 static const int k_spawnHeight = 60;
 
 glm::vec2 positionForIndex(const glm::vec<2, int> index) {
-    int y = k_numGemsY - index.y;
+    int y = k_numGemsY - 1 - index.y;
     return glm::vec2(k_startPosition.x + k_gemPadding * (index.x + 1) + index.x * k_gemSize,
                      k_startPosition.y + k_gemPadding * (y + 1) + y * k_gemSize);
 }
@@ -34,7 +34,6 @@ bool GemsSystem::initialize(Engine* engine) {
     _gameState = GameState::Initializing;
     _engine = engine;
 	randomGenerator.seed(time(nullptr));
-	_engine->textureManager()->preloadAllTextures();
 
     for(GemsComponent& component : _components) {
         component.type = ComponentType::Gem;
