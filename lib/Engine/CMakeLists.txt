@@ -38,6 +38,14 @@ message(STATUS "SDL2_IMAGE_LIBRARIES -> ${SDL2_IMAGE_LIBRARIES}")
 message(STATUS "SDL2_IMAGE_INCLUDE_DIRS -> ${SDL2_IMAGE_INCLUDE_DIRS}")
 message(STATUS "SDL2_IMAGE_VERSION_STRING -> ${SDL2_IMAGE_VERSION_STRING}")
 
+# SDL2_ttf Dependency
+set(SDL2_TTF_PATH "${DEPENDENCIES_DIR}/SDL2_ttf")
+find_package(SDL2_ttf REQUIRED)
+message(STATUS "SDL2_TTF_FOUND -> ${SDL2_TTF_FOUND}")
+message(STATUS "SDL2_TTF_LIBRARIES -> ${SDL2_TTF_LIBRARIES}")
+message(STATUS "SDL2_TTF_INCLUDE_DIRS -> ${SDL2_TTF_INCLUDE_DIRS}")
+message(STATUS "SDL2_TTF_VERSION_STRING -> ${SDL2_TTF_VERSION_STRING}")
+
 # GLM Depencency
 set(GLM_TEST_ENABLE OFF)
 add_subdirectory("${DEPENDENCIES_DIR}/glm")
@@ -64,6 +72,7 @@ target_include_directories(Engine_Static
     ${SOURCE_DIR} 
     ${SDL2_INCLUDE_DIR}
     ${SDL2_IMAGE_INCLUDE_DIRS}
+    ${SDL2_TTF_INCLUDE_DIRS}
     ${glm_SOURCE_DIR}
 )
 
@@ -72,6 +81,7 @@ target_link_libraries(Engine_Static
     PUBLIC 
     ${SDL2_LIBRARY}
     ${SDL2_IMAGE_LIBRARIES}
+	${SDL2_TTF_LIBRARIES}
     glm_static
 )
 
