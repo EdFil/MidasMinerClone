@@ -14,8 +14,8 @@ bool EntitySystem::initialize() {
 
 Entity *EntitySystem::createEntity() {
     for(Entity& entity : _entities) {
-        if(entity.state == State::Unused) {
-            entity.state = State::Used;
+        if(!entity._isUsed) {
+            entity._isUsed = true;
             return &entity;
         }
     }
@@ -24,6 +24,6 @@ Entity *EntitySystem::createEntity() {
 }
 
 void EntitySystem::releaseEntity(Entity* entity) {
-    entity->state = State::Unused;
+    entity->_isUsed = false;
 	entity->cleanup();
 }

@@ -8,18 +8,18 @@
 
 struct SDL_Window;
 struct SDL_Renderer;
-
+class Scene;
 class TextureManager;
-class GemsSystem;
 
 class Engine : public ApplicationEventDelegate {
 public:
 	Engine();
 	~Engine();
 
-	bool initialize();
+	bool initialize(std::unique_ptr<Scene>&& scene);
 	void cleanup();
 	void run();
+	void setScene(std::unique_ptr<Scene>&& scene);
 
 	EntitySystem* entitySystem() { return &_entitySystem; }
     TransformSystem* transformSystem() { return &_transformSystem; }
@@ -42,9 +42,9 @@ private:
 	SDL_Window* _window = nullptr;
 	SDL_Renderer* _renderer = nullptr;
 
+	std::unique_ptr<Scene> _runningScene;
 	std::unique_ptr<TextureManager> _textureManager;
 	std::unique_ptr<EventDispatcher> _eventDispatcher;
-	std::unique_ptr<GemsSystem> _gemsSystem;
-
+	
 	bool _isRunning = false;
 };

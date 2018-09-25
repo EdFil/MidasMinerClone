@@ -11,8 +11,9 @@ bool TransformSystem::initialize() {
 
 TransformComponent* TransformSystem::createComponent() {
     for(TransformComponent& component : _components) {
-        if(component.state == State::Unused) {
+        if(!component.isUsed) {
             component.initialize();
+			component.isUsed = true;
             return &component;
         }
     }
@@ -21,5 +22,5 @@ TransformComponent* TransformSystem::createComponent() {
 }
 
 void TransformSystem::releaseComponent(TransformComponent* component) {
-	component->state = State::Unused;
+	component->isUsed = false;
 }

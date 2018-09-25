@@ -1,10 +1,8 @@
 #pragma once
 
-#include "ECS.hpp"
-
-#include <glm/vec2.hpp>
-
-#include "EventDispatcher.hpp"
+#include <glm/ext/vector_int2.hpp>
+#include <ecs/Component.hpp>
+#include <EventDispatcher.hpp>
 
 class GemsSystem;
 class RenderComponent;

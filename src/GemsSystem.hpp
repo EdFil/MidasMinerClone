@@ -1,12 +1,12 @@
 #pragma once
 
 #include <array>
+#include <random>
 
 #include <glm/vec2.hpp>
 
-#include "ECS.hpp"
+#include "GameConstants.hpp"
 #include "GemsComponent.hpp"
-#include <random>
 
 class Entity;
 class Engine;

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "ECS.hpp"
-
-#include <glm/vec2.hpp>
+#include <glm/ext/vector_int2.hpp>
+#include <ecs/Component.hpp>
 
 class TransformComponent;
 class RenderSystem;
@@ -28,7 +27,7 @@ private:
     SDL_Texture* _texture;
 	RenderSystem* _system;
     TransformComponent* _transformComponent;
-    glm::vec<2, int> _size;
+    glm::ivec2 _size;
     bool _isVisible = true;
 
 	void cleanup();

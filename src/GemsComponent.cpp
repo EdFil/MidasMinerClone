@@ -30,8 +30,7 @@ bool GemsComponent::initialize(GemsSystem* system, RenderComponent* renderCompon
     _system = system;
     _renderComponent = renderComponent;
     _isActive = false;
-    state = State::Used;
-
+    
     return _system != nullptr && _renderComponent != nullptr;
 }
 

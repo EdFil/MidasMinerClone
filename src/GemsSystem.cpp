@@ -6,18 +6,18 @@
 
 #include <algorithm>    // std::shuffle
 #include <random>
+#include <ctime>
 
 #include <SDL_render.h>
 #include <SDL_log.h>
 #include <SDL_assert.h>
+#include "glm/integer.hpp"
 
-#include "Engine.hpp"
-#include "EntitySystem.hpp"
-#include "TransformSystem.hpp"
-#include "RenderSystem.hpp"
-#include "TextureManager.hpp"
-#include <ctime>
-#include "glm/detail/func_geometric.inl"
+#include <Engine.hpp>
+#include <TextureManager.hpp>
+#include <ecs/EntitySystem.hpp>
+#include <ecs/TransformSystem.hpp>
+#include <ecs/RenderSystem.hpp>
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
@@ -252,8 +252,9 @@ void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
     for(GemsComponent& component : _components) {
-        if(component.state == State::Unused) {
+        if(!component.isUsed) {
             component.initialize(this, renderComponent);
+			component.isUsed = true;
             return &component;
         }
     }
@@ -262,7 +263,7 @@ GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
 }
 
 void GemsSystem::releaseComponent(GemsComponent *component) {
-    component->state = State::Unused;
+    component->isUsed = false;
     component->cleanup();
 }
 

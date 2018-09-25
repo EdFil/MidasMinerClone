@@ -6,14 +6,13 @@
 #include <SDL_log.h>
 
 #include "TextureManager.hpp"
-#include "ecs/GemsSystem.hpp"
-#include "ecs/ECS.hpp"
+#include "Scene.hpp"
 #include <ctime>
 
 Engine::Engine() { }
 Engine::~Engine() { }
 
-bool Engine::initialize() {
+bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 	srand(time(nullptr));
 
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_INFO);
@@ -41,14 +40,13 @@ bool Engine::initialize() {
 
 	_textureManager = std::make_unique<TextureManager>(this);
     _eventDispatcher = std::make_unique<EventDispatcher>();
-    _gemsSystem = std::make_unique<GemsSystem>();
 
 	_transformSystem.initialize();
 	_renderSystem.initialize();
     _eventDispatcher->initialize();
-    _gemsSystem->initialize(this);
 
     _eventDispatcher->registerForApplicationEvents(this);
+	setScene(std::move(scene));
 
 	return true;
 }
@@ -68,10 +66,27 @@ void Engine::run() {
 	mainLoop();
 }
 
+void Engine::setScene(std::unique_ptr<Scene>&& scene) {
+	if(_runningScene != nullptr) {
+		_runningScene->onDestroy();
+	}
+
+	_runningScene = std::move(scene);
+
+	if(_runningScene != nullptr) {
+		_runningScene->attachEngine(this);
+		_runningScene->onCreated();
+	}
+}
+
 void Engine::mainLoop() {
 	while (_isRunning) {
 		_eventDispatcher->update();
-		_gemsSystem->update(0.16f);
+		//_gemsSystem->update(0.16f);
+
+		if(_runningScene != nullptr) {
+			_runningScene->update(0.16f);
+		}
 
 		// Render Scene
 		SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);

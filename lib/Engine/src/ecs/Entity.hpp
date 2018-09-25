@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ECS.hpp"
-
 #include <vector>
 
+enum class ComponentType;
+enum class State;
+class Component;
 class EntitySystem;
 
 class Entity {
@@ -14,9 +15,9 @@ public:
 	void addComponent(Component* component);
 	void removeComponent(Component* component);
 
-	State state = State::Unused;
 	EntitySystem* _system;
 	std::vector<Component*> _components;
+	bool _isUsed = false;
 
 private:
 	void cleanup();

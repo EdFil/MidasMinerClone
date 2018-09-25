@@ -1,3 +1,0 @@
-void coisa () {
-    return;
-}

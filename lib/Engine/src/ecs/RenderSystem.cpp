@@ -13,13 +13,13 @@ bool RenderSystem::initialize() {
 }
 
 void RenderSystem::releaseComponent(RenderComponent* component) {
-	component->state = State::Unused;
+	component->isUsed = false;
 	component->cleanup();
 }
 
 bool RenderSystem::draw(SDL_Renderer* renderer) {
-    for(RenderComponent& component : _components) {
-        if(component.state == State::Used) {
+    for(RenderComponent& component : _components) { // TODO: ZOrdering + Don't cycle all components?
+        if(component.isUsed) {
             component.draw(renderer);
         }
     }
@@ -29,8 +29,9 @@ bool RenderSystem::draw(SDL_Renderer* renderer) {
 
 RenderComponent* RenderSystem::createComponent(TransformComponent* transformComponent, SDL_Texture* texture) {
     for(RenderComponent& component : _components) {
-        if(component.state == State::Unused) {
+        if(!component.isUsed) {
             component.initialize(transformComponent, texture);
+			component.isUsed = true;
             return &component;
         }
     }

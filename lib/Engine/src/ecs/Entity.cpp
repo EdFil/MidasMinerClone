@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "Component.hpp"
 #include "EntitySystem.hpp"
 
 void Entity::release() {
@@ -20,12 +21,12 @@ Component* Entity::getComponentWithType(ComponentType type) {
 
 void Entity::addComponent(Component* component) {
 	_components.push_back(component);
-	component->_entity = this;
+	component->setEntity(this);
 }
 
 void Entity::removeComponent(Component* component) {
 	_components.erase(std::remove(_components.begin(), _components.end(), component), _components.end());
-	component->_entity = nullptr;
+	component->setEntity(this);
 }
 
 void Entity::cleanup() {

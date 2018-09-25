@@ -17,7 +17,6 @@ void RenderComponent::release() {
 bool RenderComponent::initialize(TransformComponent* transformComponent, SDL_Texture* texture) {
 	SDL_assert(transformComponent != nullptr);
 	_transformComponent = transformComponent;
-    state = State::Used;
 	setTexture(texture);
 
     return true;
