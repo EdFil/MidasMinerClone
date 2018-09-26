@@ -46,14 +46,35 @@ SDL_Texture* TextureManager::loadTexture(const TextureID textureID) {
     return texture;
 }
 
-std::unique_ptr<TextureWrapper> TextureManager::loadText(const char* text, const char* fontName, unsigned fontSize) {
+std::unique_ptr<TextureWrapper> TextureManager::loadText(const char* text, const char* fontName, unsigned fontSize, const SDL_Color& color) {
+	std::unique_ptr<TextureWrapper> textureWrapper;
 	std::string fullPath = std::string(RESOURCES_DIR) + fontName;
-	
-	TTF_Font* font = TTF_OpenFont(fullPath.c_str(), fontSize);
-	TTF_Font* font2 = TTF_OpenFont(fullPath.c_str(), fontSize);
-	SDL_LogError(SDL_LOG_CATEGORY_RENDER, SDL_GetError());
 
-	return nullptr;
+	TTF_Font* font = nullptr;
+	const auto it = _cachedFonts.find({ std::string(fontName), fontSize });
+	if (it != _cachedFonts.cend()) {
+		font = it->second;
+	}
+
+	if (font == nullptr) {
+		font = TTF_OpenFont(fullPath.c_str(), fontSize);
+		if (font == nullptr) {
+			SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Could not open font. SDL Error: %s", TTF_GetError());
+			return nullptr;
+		}
+	}
+	
+	SDL_Surface* surfaceText = TTF_RenderText_Solid(font, text, color);
+	if(surfaceText == nullptr) {
+		SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Could not generate surface for text. SDL Error: %s", TTF_GetError());
+		return nullptr;
+	}
+
+
+	SDL_Texture* textTexture = SDL_CreateTextureFromSurface(_engine->renderer(), surfaceText);
+	SDL_FreeSurface(surfaceText);
+
+	return std::make_unique<TextureWrapper>(textTexture, this);
 }
 
 void TextureManager::deleteTexture(SDL_Texture* texture) {

@@ -8,6 +8,7 @@
 class Engine;
 struct TextureWrapper;
 typedef struct _TTF_Font TTF_Font;
+typedef struct SDL_Color;
 struct SDL_Texture;
 
 enum class TextureID {
@@ -25,7 +26,7 @@ public:
 	TextureManager(Engine* engine);
 
     SDL_Texture* loadTexture(const TextureID textureID);
-	std::unique_ptr<TextureWrapper> loadText(const char* text, const char* fontName, unsigned fontSize);
+	std::unique_ptr<TextureWrapper> loadText(const char* text, const char* fontName, unsigned fontSize, const SDL_Color& color);
 	void deleteTexture(SDL_Texture* texture);
 
 	// Helper functions
@@ -35,7 +36,7 @@ public:
 private:
 	Engine* _engine;
     std::unordered_map<TextureID, SDL_Texture*> _cachedTextures;
-	std::unordered_set<TTF_Font*> _cachedFonts;
+	std::unordered_map<std::pair<std::string, unsigned>, TTF_Font*> _cachedFonts;
 
 
     std::string fullPathForTextureID(TextureID textureID) const;
