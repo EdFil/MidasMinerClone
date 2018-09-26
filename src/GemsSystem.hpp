@@ -18,11 +18,6 @@ enum class GameState {
     Ended
 };
 
-struct BackToBackCount {
-	GemsComponent* gems[k_numMaxGemsComponents]{ nullptr };
-	unsigned short numGems = 0;
-};
-
 struct NewBackToBackCount {
 	GemsComponent* horizontalGems[k_numGemsX]{ nullptr };
 	unsigned short numHorizontalGems = 0;
@@ -50,7 +45,6 @@ public:
     void releaseComponent(GemsComponent* component);
 
 	void createNewRandomGemOnIndex(const glm::ivec2& index);
-	BackToBackCount backToBackCountOnIndex(const glm::ivec2& index, const GemType gemType);
 	NewBackToBackCount theNewBackToBackCount(const glm::ivec2& index, const GemType gemType);
 	GemType randomPossibleGemForIndex(const glm::ivec2& index);
 
@@ -65,7 +59,5 @@ private:
 	GemsComponent* _selectedGem = nullptr;
     GameState _gameState = GameState::INVALID;
     long _lastTimeSpawned[8] = {0};
-
-	void updateGemPointers(GemsComponent* gemComponent);
 };
 

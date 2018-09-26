@@ -157,7 +157,6 @@ void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2&
 
 	auto* gem = static_cast<GemsComponent*>(toEntity->getComponentWithType(ComponentType::Gem));
 	gem->onMovedInBoard(toIndex);
-	updateGemPointers(gem);
 
 	_dirty.push_back(toEntity);
 }
@@ -182,11 +181,6 @@ void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondCo
 	const auto firstIndex = firstComponent->index();
 	firstComponent->onMovedInBoard(secondComponent->index());
 	secondComponent->onMovedInBoard(firstIndex);
-
-
-	updateGemPointers(firstComponent);
-	updateGemPointers(secondComponent);
-
 
 	// Save entities to check if the swap was valid
 	_swapedEntities.push_back(firstEntity);
@@ -217,9 +211,6 @@ void GemsSystem::cancelGemSwap() {
 	const auto firstIndex = firstComponent->index();
 	firstComponent->onMovedInBoard(secondComponent->index());
 	secondComponent->onMovedInBoard(firstIndex);
-
-	updateGemPointers(firstComponent);
-	updateGemPointers(secondComponent);
 }
 
 void GemsSystem::removeEntity(const glm::ivec2 index) {
@@ -283,45 +274,7 @@ void GemsSystem::createNewRandomGemOnIndex(const glm::vec<2, int>& index) {
 	gem->setGemType(randomPossibleGemForIndex(index));
 	gem->onAddedToBoard(index);
 
-	updateGemPointers(gem);
-
 	_board[index.x][index.y] = entityToBeSpawned;
-}
-
-BackToBackCount GemsSystem::backToBackCountOnIndex(const glm::ivec2& index, const GemType gemType) {
-	BackToBackCount count;
-	std::array<GemsComponent*, k_numMaxGemsComponents> checkedGems = { nullptr };
-	unsigned numCheckedGems = 0;
-	std::array<GemsComponent*, k_numMaxGemsComponents> gemsToCheck = { nullptr };
-	unsigned numGemsToCheck = 0;
-
-	Entity* entity = _board[index.x][index.y];
-	if (entity != nullptr) {
-		gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-	} else {
-		if (index.x > 0 && _board[index.x - 1][index.y] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x - 1][index.y]->getComponentWithType(ComponentType::Gem));
-		if (index.x < k_numGemsX && _board[index.x + 1][index.y] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x + 1][index.y]->getComponentWithType(ComponentType::Gem));
-		if (index.y > 0 && _board[index.x - 1][index.y - 1] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x][index.y - 1]->getComponentWithType(ComponentType::Gem));
-		if (index.y < k_numGemsY && _board[index.x][index.y + 1] != nullptr) gemsToCheck[numGemsToCheck++] = static_cast<GemsComponent*>(_board[index.x][index.y + 1]->getComponentWithType(ComponentType::Gem));
-	}
-
-	while(numGemsToCheck > 0) {
-		GemsComponent* currentGem = gemsToCheck[--numGemsToCheck];
-		if(std::find(checkedGems.cbegin(), checkedGems.cend(), currentGem) != checkedGems.cend()) {
-			continue;
-		}
-		checkedGems[numCheckedGems++] = currentGem;
-
-		if(currentGem->gemType() == gemType) {
-			count.gems[count.numGems++] = currentGem;
-			if (currentGem->leftGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->leftGem();
-			if (currentGem->rightGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->rightGem();
-			if (currentGem->upGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->upGem();
-			if (currentGem->downGem() != nullptr) gemsToCheck[numGemsToCheck++] = currentGem->downGem();
-		}
-	}
-	
-	return count;
 }
 
 NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, const GemType gemType) {
@@ -398,53 +351,4 @@ GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
 
 	SDL_assert(false); // No possible Gem?
 	return GemType::Green;
-}
-
-void GemsSystem::updateGemPointers(GemsComponent* gemComponent) {
-	SDL_assert(gemComponent != nullptr);
-	const auto& index = gemComponent->index();
-
-	if (index.x - 1 > 0) {
-		Entity* entity = _board[index.x - 1][index.y];
-		if (entity != nullptr) {
-			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			component->_right = gemComponent;
-			gemComponent->_left = component;
-		}
-	} else {
-		gemComponent->_left = nullptr;
-	}
-
-	if (index.x + 1 < k_numGemsX) {
-		Entity* entity = _board[index.x + 1][index.y];
-		if (entity != nullptr) {
-			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			component->_left = gemComponent;
-			gemComponent->_right = component;
-		}
-	} else {
-		gemComponent->_right = nullptr;
-	}
-
-	if (index.y - 1 > 0) {
-		Entity* entity = _board[index.x][index.y - 1];
-		if (entity != nullptr) {
-			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			component->_up = gemComponent;
-			gemComponent->_down = component;
-		}
-	} else {
-		gemComponent->_down = nullptr;
-	}
-
-	if (index.y + 1 < k_numGemsY) {
-		Entity* entity = _board[index.x][index.y + 1];
-		if (entity != nullptr) {
-			auto component = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			component->_down = gemComponent;
-			gemComponent->_up = component;
-		}
-	} else {
-		gemComponent->_up = nullptr;
-	}
 }

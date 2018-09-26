@@ -60,7 +60,6 @@ void GemsComponent::onRemovedFromBoard() {
     SDL_assert(_isActive);
     SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
 
-	_left = _right = _up = _down = nullptr;
     _boardIndex = { -1, -1 };
 	_isActive = false;
     _system->engine()->eventDispatcher()->unregisterForMouseEvents(this);
