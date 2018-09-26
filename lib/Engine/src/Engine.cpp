@@ -57,6 +57,7 @@ bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 
 void Engine::cleanup() {
     _eventDispatcher->unregisterForApplicationEvents(this);
+	g_text.reset();
 
 	if(_renderer)
 		SDL_DestroyRenderer(_renderer);
@@ -98,7 +99,7 @@ void Engine::mainLoop() {
 
         _renderSystem.draw(_renderer);
 
-		SDL_Rect rect;
+		SDL_Rect rect{0};
 		SDL_QueryTexture(g_text->texture, nullptr, nullptr, &rect.w, &rect.h);
 		SDL_RenderCopy(_renderer, g_text->texture, nullptr, &rect);
 

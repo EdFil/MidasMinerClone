@@ -12,13 +12,18 @@ typedef struct SDL_Color;
 struct SDL_Texture;
 
 enum class TextureID {
-    Background = 0,
-    Blue = 1,
-    Green,
-    Purple,
-    Red,
-    Yellow,
-    COUNT
+	Background = 0,
+	Blue = 1,
+	Green,
+	Purple,
+	Red,
+	Yellow,
+	COUNT
+};
+
+enum class FontID {
+	Title,
+	COUNT
 };
 
 class TextureManager {
@@ -36,8 +41,6 @@ public:
 private:
 	Engine* _engine;
     std::unordered_map<TextureID, SDL_Texture*> _cachedTextures;
-	std::unordered_map<std::pair<std::string, unsigned>, TTF_Font*> _cachedFonts;
-
 
     std::string fullPathForTextureID(TextureID textureID) const;
 };
@@ -47,5 +50,5 @@ struct TextureWrapper {
 	TextureManager* manager;
 
 	TextureWrapper(SDL_Texture* texture, TextureManager* manager) : texture(texture), manager(manager) { }
-	~TextureWrapper() { manager->deleteTexture(texture); }
+	~TextureWrapper() {  manager->deleteTexture(texture); }
 };

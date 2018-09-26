@@ -93,8 +93,26 @@ foreach(SOURCE IN ITEMS ${SOURCES})
     source_group("${GROUP_PATH}" FILES "${SOURCE}")
 endforeach()
 
-# get_cmake_property(_variableNames VARIABLES)
-# list (SORT _variableNames)
-# foreach (_variableName ${_variableNames})
-#     message(STATUS "${_variableName}=${${_variableName}}")
-# endforeach()
+# Copy SDL dll's to executalbr path
+if(MSVC)
+	# Check current architecture
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(ARCH "x64")
+	else()
+		set(ARCH "x86")
+	endif()
+
+	# Gather them all
+	file(GLOB_RECURSE SDL2_DLLS "${SDL2_PATH}/lib/${ARCH}/*.dll")
+	file(GLOB_RECURSE SDL2_IMAGE_PATH "${SDL2_IMAGE_PATH}/lib/${ARCH}/*.dll")
+	file(GLOB_RECURSE SDL2_TTF_PATH "${SDL2_TTF_PATH}/lib/${ARCH}/*.dll")
+	list(APPEND SDL2_DLLS ${SDL2_IMAGE_PATH})
+	list(APPEND SDL2_DLLS ${SDL2_TTF_PATH})
+
+	# Copy
+	foreach(DLL_PATH IN ITEMS ${SDL2_DLLS})
+		get_filename_component(DLL_NAME ${DLL_PATH} NAME)
+		#add_custom_command(TARGET Engine_Static POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DLL_PATH}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug/${DLL_NAME}")
+		message(STATUS "Copy ${DLL_PATH} -> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug/${DLL_NAME}")
+	endforeach()
+endif()

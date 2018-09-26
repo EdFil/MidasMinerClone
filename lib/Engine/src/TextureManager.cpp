@@ -51,10 +51,10 @@ std::unique_ptr<TextureWrapper> TextureManager::loadText(const char* text, const
 	std::string fullPath = std::string(RESOURCES_DIR) + fontName;
 
 	TTF_Font* font = nullptr;
-	const auto it = _cachedFonts.find({ std::string(fontName), fontSize });
-	if (it != _cachedFonts.cend()) {
-		font = it->second;
-	}
+	//const auto it = _cachedFonts.find({ std::string(fontName), fontSize });
+	//if (it != _cachedFonts.cend()) {
+	//	font = it->second;
+	//}
 
 	if (font == nullptr) {
 		font = TTF_OpenFont(fullPath.c_str(), fontSize);
