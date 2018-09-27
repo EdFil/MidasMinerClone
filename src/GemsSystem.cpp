@@ -89,17 +89,17 @@ void GemsSystem::update(float delta) {
 	if (!_dirty.empty()) {
 		for (Entity* entity : _dirty) {
 			auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (!gem->isFalling() && gem->isActive()) {
+			if (gem->canBeRemoved()) {
 				const NewBackToBackCount backToBackGems = theNewBackToBackCount(gem->index(), gem->gemType());
 				if (backToBackGems.numHorizontalGems >= 3) {
 					for (int i = 0; i < backToBackGems.numHorizontalGems; i++) {
-						if (backToBackGems.horizontalGems[i]->isActive())
+						if (backToBackGems.horizontalGems[i]->canBeRemoved())
 							removeEntity(backToBackGems.horizontalGems[i]->index());
 						}
 				}
 				if (backToBackGems.numVerticalGems >= 3) {
 					for (int i = 0; i < backToBackGems.numVerticalGems; i++) {
-						if (backToBackGems.verticalGems[i]->isActive())
+						if (backToBackGems.verticalGems[i]->canBeRemoved())
 							removeEntity(backToBackGems.verticalGems[i]->index());
 					}
 				}
@@ -372,6 +372,6 @@ GemType GemsSystem::randomPossibleGemForIndex(const glm::vec<2, int>& index) {
 		}
 	}
 
-	SDL_assert(false); // No possible Gem?
-	return GemType::Green;
+	//SDL_assert(false); // No possible Gem?
+	return possibleGems[0];
 }
