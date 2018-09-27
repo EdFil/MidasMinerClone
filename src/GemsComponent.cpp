@@ -50,10 +50,26 @@ void GemsComponent::onAddedToBoard(const glm::vec<2, int>& index) {
     _system->engine()->eventDispatcher()->registerForMouseEvents(this);
 }
 
+void GemsComponent::onSwap(GemsComponent& gemComponent) {
+	std::swap(gemComponent._boardIndex, _boardIndex);
+
+	_finalPosition = GemsSystem::positionForIndex(_boardIndex);
+	gemComponent._finalPosition = GemsSystem::positionForIndex(_boardIndex);
+
+	gemComponent._gemStatus = _gemStatus = GemStatus::Swapping;
+}
+
+void GemsComponent::onSwapBackToIndex(const glm::ivec2& index) {
+	_finalPosition = GemsSystem::positionForIndex(index);
+	_gemStatus = GemStatus::Swapping;
+}
+
 void GemsComponent::onMovedInBoard(const glm::vec<2, int>& index) {
-    SDL_assert(_gemStatus == GemStatus::Rest);
+    SDL_assert(_gemStatus != GemStatus::Despawned && _gemStatus != GemStatus::INVALID);
     SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
 
+	_gemStatus = GemStatus::Rest;
+	_finalPosition = _system->positionForIndex(index);
 	_boardIndex = index;
 }
 
@@ -67,13 +83,28 @@ void GemsComponent::onRemovedFromBoard() {
 }
 
 void GemsComponent::update(float delta) {
+	if (_gemStatus == GemStatus::INVALID || _gemStatus == GemStatus::Despawned)
+		return;
+
+	TransformComponent* transform = _renderComponent->transformComponent();
+
 	if(_gemStatus == GemStatus::Falling) {
-		TransformComponent* transform = _renderComponent->transformComponent();
 		if(transform->position().y <= _finalPosition.y) {
 			transform->setPositionY(transform->position().y + k_fallSpeed * delta);
 		} else {
 			transform->setPosition(_finalPosition);
 			_gemStatus = GemStatus::Rest;
+		}
+	} else if (_gemStatus == GemStatus::Swapping) {
+		const int direction = transform->position().x > _finalPosition.x ? 1 : -1;
+		const float predictedFinalPosition = transform->position().x + k_swapSpeed * delta * direction;
+		if ((direction > 0 && predictedFinalPosition > _finalPosition.x) || 
+			(direction < 0 && predictedFinalPosition < _finalPosition.x)) {
+			transform->setPosition(_finalPosition);
+			_gemStatus = GemStatus::Swapped;
+			_system->onGemSwapped(this);
+		} else {
+			transform->setPositionX(predictedFinalPosition);
 		}
 	}
 }

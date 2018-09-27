@@ -41,6 +41,7 @@ public:
 	void removeEntity(const glm::ivec2 index);
 
 	void onGemClicked(GemsComponent* gemComponent);
+	void onGemSwapped(GemsComponent* gemsComponent);
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);

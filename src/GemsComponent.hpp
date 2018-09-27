@@ -23,7 +23,9 @@ enum class GemStatus {
 	Despawned,
 	Rest,
 	Falling,
-	Swapping
+	Swapping,
+	Swapped,
+	SwappingBack
 };
 
 class GemsComponent : public Component, public MouseEventDelegate {
@@ -33,7 +35,9 @@ public:
     bool initialize(GemsSystem* system, RenderComponent* renderComponent);
     void cleanup();
 
-	void onAddedToBoard(const glm::vec<2, int>& index);
+	void onAddedToBoard(const glm::ivec2& index);
+	void onSwap(GemsComponent& gemComponent);
+	void onSwapBackToIndex(const glm::ivec2& index);
 	void onMovedInBoard(const glm::vec<2, int>& index);
 	void onRemovedFromBoard();
 	void update(float delta);

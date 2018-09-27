@@ -167,27 +167,32 @@ void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2&
 void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent) {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Trying to swap [%d][%d] with [%d][%d]", firstComponent->index().x, firstComponent->index().y, secondComponent->index().x, secondComponent->index().y);
 
-	Entity* firstEntity = firstComponent->entity();
-	Entity* secondEntity = secondComponent->entity();
-	TransformComponent* firstTransform = static_cast<TransformComponent*>(firstEntity->getComponentWithType(ComponentType::Transform));
-	TransformComponent* secondTransform = static_cast<TransformComponent*>(secondEntity->getComponentWithType(ComponentType::Transform));
-
-	// Swap positions
-	const auto firstPosition = firstTransform->position();
-	firstTransform->setPosition(secondTransform->position());
-	secondTransform->setPosition(firstPosition);
-
 	// Swap on the board
 	std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
+	
+	firstComponent->onSwap(*secondComponent);
+	
+	//Entity* firstEntity = firstComponent->entity();
+	//Entity* secondEntity = secondComponent->entity();
+	//TransformComponent* firstTransform = static_cast<TransformComponent*>(firstEntity->getComponentWithType(ComponentType::Transform));
+	//TransformComponent* secondTransform = static_cast<TransformComponent*>(secondEntity->getComponentWithType(ComponentType::Transform));
 
-	// Swap indexes
-	const auto firstIndex = firstComponent->index();
-	firstComponent->onMovedInBoard(secondComponent->index());
-	secondComponent->onMovedInBoard(firstIndex);
+	//// Swap positions
+	//const auto firstPosition = firstTransform->position();
+	//firstTransform->setPosition(secondTransform->position());
+	//secondTransform->setPosition(firstPosition);
 
-	// Save entities to check if the swap was valid
-	_swapedEntities.push_back(firstEntity);
-	_swapedEntities.push_back(secondEntity);
+	//// Swap on the board
+	//std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
+
+	//// Swap indexes
+	//const auto firstIndex = firstComponent->index();
+	//firstComponent->onMovedInBoard(secondComponent->index());
+	//secondComponent->onMovedInBoard(firstIndex);
+
+	//// Save entities to check if the swap was valid
+	//_swapedEntities.push_back(firstEntity);
+	//_swapedEntities.push_back(secondEntity);
 }
 
 void GemsSystem::cancelGemSwap() {
@@ -248,6 +253,9 @@ void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 	}
 }
 
+void GemsSystem::onGemSwapped(GemsComponent* gemsComponent) {
+	_dirty.push_back(gemsComponent->entity());
+}
 
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
