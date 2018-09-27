@@ -60,6 +60,7 @@ private:
 	std::vector<std::pair<GemsComponent*, GemsComponent*>> _swapedGems;
     Engine* _engine = nullptr;
     Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
+	Entity* _selectedGemCross;
 	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};
 	GemsComponent* _selectedGem = nullptr;
     GameState _gameState = GameState::INVALID;

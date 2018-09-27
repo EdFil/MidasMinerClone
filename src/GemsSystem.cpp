@@ -54,6 +54,15 @@ bool GemsSystem::initialize(Engine* engine) {
         _waiting.push_back(entity);
     }
 
+	// Create cross entity
+	auto transform = engine->transformSystem()->createComponent();
+	auto render = engine->renderSystem()->createComponent(transform, _engine->textureManager()->loadTexture(TextureID::Cross));
+	render->setIsVisible(false);
+	_selectedGemCross = engine->entitySystem()->createEntity();
+	_selectedGemCross->addComponent(transform);
+	_selectedGemCross->addComponent(render);
+	
+
     return false;
 }
 
@@ -217,8 +226,13 @@ void GemsSystem::removeEntity(const glm::ivec2 index) {
 void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 	if (gemComponent->canSwap()) {
 		if (_selectedGem == nullptr) {
-
 			_selectedGem = gemComponent;
+
+			auto transform = static_cast<TransformComponent*>(_selectedGemCross->getComponentWithType(ComponentType::Transform));
+			transform->setPosition(gemComponent->_renderComponent->transformComponent()->position());
+
+			auto render = static_cast<RenderComponent*>(_selectedGemCross->getComponentWithType(ComponentType::Render));
+			render->setIsVisible(true);
 		}
 		else {
 			const glm::ivec2 gemDistance = glm::abs(_selectedGem->index() - gemComponent->index());
@@ -226,6 +240,9 @@ void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 				swapGems(gemComponent, _selectedGem);
 
 			_selectedGem = nullptr;
+
+			auto render = static_cast<RenderComponent*>(_selectedGemCross->getComponentWithType(ComponentType::Render));
+			render->setIsVisible(false);
 		}
 	} else {
 		

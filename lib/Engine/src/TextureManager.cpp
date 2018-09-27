@@ -115,6 +115,8 @@ std::string TextureManager::fullPathForTextureID(TextureID textureID) const {
             return basePath + "Red.png";
         case TextureID::Yellow:
             return basePath + "Yellow.png";
+		case TextureID::Cross:
+			return basePath + "Cross.png";
         default:
             SDL_assert(false); // Unknown TextureID
             return "";

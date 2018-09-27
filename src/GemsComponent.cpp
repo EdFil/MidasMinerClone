@@ -145,7 +145,8 @@ bool GemsComponent::onLeftMouseDown(int x, int y) {
     SDL_Point mousePosition{x, y};
 
     if(SDL_PointInRect(&mousePosition, &gemRect)) {
-		_system->onGemClicked(this);
+		_mouseDownPosition = { x, y };
+		_isDragging = false;
 		return true;
     }
 
@@ -153,9 +154,35 @@ bool GemsComponent::onLeftMouseDown(int x, int y) {
 }
 
 bool GemsComponent::onLeftMouseUp(int x, int y) {
+	if(_mouseDownPosition != glm::ivec2{-1, -1}) {
+		if(!_isDragging) {
+			_system->onGemClicked(this);
+		} else {
+			TransformComponent* transformComponent = _renderComponent->transformComponent();
+			transformComponent->setPosition(GemsSystem::positionForIndex(_boardIndex));
+		}
+
+		_isDragging = false;
+		_mouseDownPosition = { -1, -1 };
+		return true;
+	}
+
 	return false;
 }
 
 bool GemsComponent::onMouseMotion(int x, int y) {
+	if (_mouseDownPosition == glm::ivec2{ -1, -1 }) return false;
+
+	if(!_isDragging && std::abs(_mouseDownPosition.x - x + _mouseDownPosition.y - y) > 5) {
+		_isDragging = true;
+	}
+
+	if (_isDragging) {
+		TransformComponent* transformComponent = _renderComponent->transformComponent();
+		const auto dragDelta = _mouseDownPosition - glm::ivec2{ x, y };
+		transformComponent->setPosition(GemsSystem::positionForIndex(_boardIndex) - glm::vec2(dragDelta.x, dragDelta.y));
+	}
+
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Is Dragging %d", _isDragging);
 	return false;
 }

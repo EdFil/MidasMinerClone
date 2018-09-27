@@ -64,6 +64,8 @@ private:
     RenderComponent* _renderComponent = nullptr;
 	GemType _gemType = GemType::INVALID;
 	GemStatus _gemStatus = GemStatus::INVALID;
+	glm::ivec2 _mouseDownPosition{-1};
+	bool _isDragging = false;
 
     friend GemsSystem;
 };

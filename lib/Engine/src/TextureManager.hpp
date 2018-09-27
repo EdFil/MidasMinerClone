@@ -18,6 +18,7 @@ enum class TextureID {
 	Purple,
 	Red,
 	Yellow,
+	Cross,
 	COUNT
 };
 
