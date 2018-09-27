@@ -89,13 +89,13 @@ void GemsSystem::update(float delta) {
 	if (!_dirty.empty()) {
 		for (Entity* entity : _dirty) {
 			auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gem->isActive()) {
+			if (!gem->isFalling() && gem->isActive()) {
 				const NewBackToBackCount backToBackGems = theNewBackToBackCount(gem->index(), gem->gemType());
 				if (backToBackGems.numHorizontalGems >= 3) {
 					for (int i = 0; i < backToBackGems.numHorizontalGems; i++) {
 						if (backToBackGems.horizontalGems[i]->isActive())
 							removeEntity(backToBackGems.horizontalGems[i]->index());
-					}
+						}
 				}
 				if (backToBackGems.numVerticalGems >= 3) {
 					for (int i = 0; i < backToBackGems.numVerticalGems; i++) {

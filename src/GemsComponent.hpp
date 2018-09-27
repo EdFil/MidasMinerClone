@@ -48,6 +48,7 @@ public:
 	GemStatus gemStatus() const { return _gemStatus; }
 	bool isActive() const { return _gemStatus != GemStatus::INVALID && _gemStatus != GemStatus::Despawned; }
 	bool canSwap() const { return _gemStatus == GemStatus::Rest; }
+	bool isFalling() const { return _gemStatus == GemStatus::Falling; }
 	bool canBeMatchedWith(const GemType gemType) const;
 
 	void setGemType(GemType gemType);
