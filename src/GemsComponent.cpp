@@ -90,7 +90,7 @@ void GemsComponent::update(float delta) {
 	TransformComponent* transform = _renderComponent->transformComponent();
 
 	if(_gemStatus == GemStatus::Falling) {
-		if(transform->position().y <= _finalPosition.y) {
+		if(transform->position().y < _finalPosition.y) {
 			transform->setPositionY(transform->position().y + k_fallSpeed * delta);
 		} else {
 			transform->setPosition(_finalPosition);
@@ -101,10 +101,10 @@ void GemsComponent::update(float delta) {
 		const glm::vec2 movementDelta{ k_swapSpeed * delta };
 		const glm::vec2 currentDirection = glm::normalize(_finalPosition - transform->position());
 		const glm::vec2 positionWithDelta = transform->position() + movementDelta * currentDirection;
-		const glm::vec2 directionAfterDelta = glm::normalize(positionWithDelta - transform->position());
+		const glm::vec2 directionAfterDelta = glm::normalize(_finalPosition - positionWithDelta);
 
 		// If we changed directions, we have gone too far, set to finalPosition and finish animation
-		if (currentDirection != directionAfterDelta) {
+		if (std::abs(currentDirection.x - directionAfterDelta.x) > 0.1f || std::abs(currentDirection.y - directionAfterDelta.y) > 0.1f) {
 			transform->setPosition(_finalPosition);
 
 			if (_gemStatus == GemStatus::Swapping) {

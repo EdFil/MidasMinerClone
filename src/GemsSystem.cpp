@@ -21,8 +21,8 @@
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
-static const glm::vec2 k_startPosition = glm::vec2(320, 92 - (k_gemPadding * (k_numGemsY - 9 + 1) + (k_numGemsY - 8) * k_gemSize));
-static const int k_spawnHeight = k_startPosition.y;
+static const glm::vec2 k_startPosition = glm::vec2(320, 92);
+static const float k_spawnHeight = k_startPosition.y - k_gemSize - k_gemPadding;
 
 bool GemsSystem::initialize(Engine* engine) {
     _gameState = GameState::Initializing;

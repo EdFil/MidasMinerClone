@@ -16,6 +16,9 @@ GameScene::GameScene() { /* Needs to be defined on the cpp because of forward de
 void GameScene::onCreated() {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "GameScene::onCreated");
 
+	_gemsSystem = std::make_unique<GemsSystem>();
+	_gemsSystem->initialize(_engine);
+
 	TransformComponent* transform = _engine->transformSystem()->createComponent();
 
 	SDL_Texture* backgroundTexture = _engine->textureManager()->loadTexture(TextureID::Background);
@@ -24,9 +27,6 @@ void GameScene::onCreated() {
 	_background = _engine->entitySystem()->createEntity();
 	_background->addComponent(transform);
 	_background->addComponent(renderComponent);
-
-	_gemsSystem = std::make_unique<GemsSystem>();
-	_gemsSystem->initialize(_engine);
 }
 
 void GameScene::update(float delta) {
