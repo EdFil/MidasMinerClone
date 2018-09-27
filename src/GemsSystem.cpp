@@ -60,10 +60,6 @@ bool GemsSystem::initialize(Engine* engine) {
 void GemsSystem::update(float delta) {
 	memset(_currentFrameSpawnOffset, 0, sizeof(_currentFrameSpawnOffset));
 
-	for(auto& component : _components) {
-		component.update(delta);
-	}
-
 	if(!_swapedGems.empty()) {
 		for (auto& swapPair : _swapedGems) {
 			bool couldSwap1 = tryChainDelete(swapPair.first);
@@ -102,7 +98,10 @@ void GemsSystem::update(float delta) {
 		}
 
 		_dirty.clear();
-		return;
+	}
+
+	for (auto& component : _components) {
+		component.update(delta);
 	}
 
     for(int x = 0; x < k_numGemsX; x++) {
@@ -145,13 +144,10 @@ void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2&
 	std::swap(_board[fromIndex.x][fromIndex.y], _board[toIndex.x][toIndex.y]);
 	Entity* toEntity = _board[toIndex.x][toIndex.y];
 
-	auto* transform = static_cast<TransformComponent*>(toEntity->getComponentWithType(ComponentType::Transform));
-	transform->setPosition(positionForIndex(toIndex));
-
 	auto* gem = static_cast<GemsComponent*>(toEntity->getComponentWithType(ComponentType::Gem));
-	gem->onMovedInBoard(toIndex);
-
-	_dirty.push_back(toEntity);
+	gem->_boardIndex = toIndex;
+	gem->_gemStatus = GemStatus::Falling;
+	gem->_finalPosition = positionForIndex(toIndex);
 }
 
 void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent) {
@@ -240,6 +236,10 @@ void GemsSystem::onGemsSwapped(GemsComponent* firstComponent, GemsComponent* sec
 	_swapedGems.emplace_back(firstComponent, secondComponent);
 }
 
+void GemsSystem::onFinishedFalling(GemsComponent* gemComponent) {
+	_dirty.emplace_back(gemComponent->entity());
+}
+
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
     for(GemsComponent& component : _components) {
@@ -294,7 +294,8 @@ NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, co
 	for (int x = index.x - 1 ; x >= 0; x--) {
 		if (Entity* entity = _board[x][index.y]) {
 			const auto gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gemComponent->gemType() != gemType) break;
+			if (!gemComponent->canBeMatchedWith(gemType)) break;
+			SDL_assert(gemComponent->gemStatus() == GemStatus::Rest || gemComponent->gemStatus() == GemStatus::Spawned);
 			count.horizontalGems[count.numHorizontalGems++] = gemComponent;
 
 		}
@@ -304,7 +305,8 @@ NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, co
 	for (int x = index.x + 1; x < k_numGemsX; x++) {
 		if (Entity* entity = _board[x][index.y]) {
 			const auto gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gemComponent->gemType() != gemType) break;
+			if (!gemComponent->canBeMatchedWith(gemType)) break;
+			SDL_assert(gemComponent->gemStatus() == GemStatus::Rest || gemComponent->gemStatus() == GemStatus::Spawned);
 			count.horizontalGems[count.numHorizontalGems++] = gemComponent;
 
 		}
@@ -314,7 +316,8 @@ NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, co
 	for (int y = index.y - 1; y >= 0; y--) {
 		if (Entity* entity = _board[index.x][y]) {
 			const auto gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gemComponent->gemType() != gemType) break;
+			if (!gemComponent->canBeMatchedWith(gemType)) break;
+			SDL_assert(gemComponent->gemStatus() == GemStatus::Rest || gemComponent->gemStatus() == GemStatus::Spawned);
 			count.verticalGems[count.numVerticalGems++] = gemComponent;
 
 		}
@@ -324,7 +327,8 @@ NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, co
 	for (int y = index.y + 1; y < k_numGemsY; y++) {
 		if (Entity* entity = _board[index.x][y]) {
 			const auto gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gemComponent->gemType() != gemType) break;
+			if (!gemComponent->canBeMatchedWith(gemType)) break;
+			SDL_assert(gemComponent->gemStatus() == GemStatus::Rest || gemComponent->gemStatus() == GemStatus::Spawned);
 			count.verticalGems[count.numVerticalGems++] = gemComponent;
 
 		}

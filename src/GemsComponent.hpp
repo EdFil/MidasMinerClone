@@ -21,6 +21,7 @@ enum class GemType {
 enum class GemStatus {
 	INVALID = -1,
 	Despawned,
+	Spawned,
 	Rest,
 	Falling,
 	Swapping,
@@ -44,9 +45,10 @@ public:
 
 	const glm::ivec2& index() const { return _boardIndex; }
 	GemType gemType() const { return _gemType; }
+	GemStatus gemStatus() const { return _gemStatus; }
 	bool isActive() const { return _gemStatus != GemStatus::INVALID && _gemStatus != GemStatus::Despawned; }
 	bool canSwap() const { return _gemStatus == GemStatus::Rest; }
-	bool canBeMatchedWith(const GemType gemType) const { return _gemStatus == GemStatus::Rest && _gemType == gemType; }
+	bool canBeMatchedWith(const GemType gemType) const;
 
 	void setGemType(GemType gemType);
 

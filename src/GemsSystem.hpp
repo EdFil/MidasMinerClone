@@ -43,6 +43,7 @@ public:
 
 	void onGemClicked(GemsComponent* gemComponent);
 	void onGemsSwapped(GemsComponent* firstComponent, GemsComponent* secondComponent);
+	void onFinishedFalling(GemsComponent* gemComponent);
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);

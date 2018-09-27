@@ -46,7 +46,7 @@ void GemsComponent::onAddedToBoard(const glm::vec<2, int>& index) {
     SDL_assert(_boardIndex.x == -1 && _boardIndex.y == -1);
 
 	_boardIndex = index;
-	_gemStatus = GemStatus::Falling;
+	_gemStatus = GemStatus::Spawned;
 	_finalPosition = _system->positionForIndex(index);
     _system->engine()->eventDispatcher()->registerForMouseEvents(this);
 }
@@ -84,17 +84,20 @@ void GemsComponent::onRemovedFromBoard() {
 }
 
 void GemsComponent::update(float delta) {
-	if (_gemStatus == GemStatus::INVALID || _gemStatus == GemStatus::Despawned)
+	if (_gemStatus == GemStatus::INVALID || _gemStatus == GemStatus::Despawned || _gemStatus == GemStatus::Rest)
 		return;
 
-	TransformComponent* transform = _renderComponent->transformComponent();
+	if (_gemStatus == GemStatus::Spawned) 
+		_gemStatus = GemStatus::Falling;
 
+	TransformComponent* transform = _renderComponent->transformComponent();
 	if(_gemStatus == GemStatus::Falling) {
 		if(transform->position().y < _finalPosition.y) {
 			transform->setPositionY(transform->position().y + k_fallSpeed * delta);
 		} else {
 			transform->setPosition(_finalPosition);
 			_gemStatus = GemStatus::Rest;
+			_system->onFinishedFalling(this);
 		}
 	} else if (_gemStatus == GemStatus::Swapping || _gemStatus == GemStatus::SwappingBack) {
 		// Auxiliary calculations
@@ -119,6 +122,10 @@ void GemsComponent::update(float delta) {
 			transform->setPosition(positionWithDelta);
 		}
 	}
+}
+
+bool GemsComponent::canBeMatchedWith(const GemType gemType) const {
+	return (_gemStatus == GemStatus::Spawned || _gemStatus == GemStatus::Rest) && _gemType == gemType;
 }
 
 void GemsComponent::setGemType(GemType gemType) {
