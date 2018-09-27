@@ -36,7 +36,7 @@ bool GemsSystem::initialize(Engine* engine) {
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
 	_dirty.reserve(numGems);
-	_swapedEntities.reserve(2);
+	_swapedGems.reserve(2); // We will probably not need to keep track of more than 4 swaps
 
     for(size_t i = 0; i < numGems; i++) {
         auto transform = engine->transformSystem()->createComponent();
@@ -64,31 +64,21 @@ void GemsSystem::update(float delta) {
 		component.update(delta);
 	}
 
-	if (!_swapedEntities.empty()) {
-		bool wasSwapValid = false;
-		for (Entity* entity : _swapedEntities) {
-			GemsComponent* gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gemComponent->canSwap()) {
-				NewBackToBackCount count = theNewBackToBackCount(gemComponent->index(), gemComponent->gemType());
-				if (count.numHorizontalGems > 2) {
-					wasSwapValid = true;
-					for (int i = 0; i < count.numHorizontalGems; i++)
-						removeEntity(count.horizontalGems[i]->index());
-				}
-				if (count.numVerticalGems > 2) {
-					wasSwapValid = true;
-					for (int i = 0; i < count.numVerticalGems; i++)
-						removeEntity(count.verticalGems[i]->index());
-				}
+	if(!_swapedGems.empty()) {
+		for (auto& swapPair : _swapedGems) {
+			bool couldSwap1 = tryChainDelete(swapPair.first);
+			bool couldSwap2 = tryChainDelete(swapPair.second);
+			bool couldSwap = couldSwap1 || couldSwap2;
+
+			if(!couldSwap) {
+				cancelGemSwap(swapPair);
+			} else {
+				if (swapPair.first->isActive()) swapPair.first->_gemStatus = GemStatus::Rest;
+				if (swapPair.second->isActive()) swapPair.second->_gemStatus = GemStatus::Rest;
 			}
 		}
 
-		if (!wasSwapValid) {
-			cancelGemSwap();
-		}
-
-		_swapedEntities.clear();
-		return;
+		_swapedGems.clear();
 	}
 
 	if (!_dirty.empty()) {
@@ -167,58 +157,50 @@ void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2&
 void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent) {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Trying to swap [%d][%d] with [%d][%d]", firstComponent->index().x, firstComponent->index().y, secondComponent->index().x, secondComponent->index().y);
 
-	// Swap on the board
 	std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
-	
-	firstComponent->onSwap(*secondComponent);
-	
-	//Entity* firstEntity = firstComponent->entity();
-	//Entity* secondEntity = secondComponent->entity();
-	//TransformComponent* firstTransform = static_cast<TransformComponent*>(firstEntity->getComponentWithType(ComponentType::Transform));
-	//TransformComponent* secondTransform = static_cast<TransformComponent*>(secondEntity->getComponentWithType(ComponentType::Transform));
-
-	//// Swap positions
-	//const auto firstPosition = firstTransform->position();
-	//firstTransform->setPosition(secondTransform->position());
-	//secondTransform->setPosition(firstPosition);
-
-	//// Swap on the board
-	//std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
-
-	//// Swap indexes
-	//const auto firstIndex = firstComponent->index();
-	//firstComponent->onMovedInBoard(secondComponent->index());
-	//secondComponent->onMovedInBoard(firstIndex);
-
-	//// Save entities to check if the swap was valid
-	//_swapedEntities.push_back(firstEntity);
-	//_swapedEntities.push_back(secondEntity);
+	std::swap(firstComponent->_boardIndex, secondComponent->_boardIndex);
+	firstComponent->_gemStatus = secondComponent->_gemStatus = GemStatus::Swapping;
+	firstComponent->_finalPosition = positionForIndex(firstComponent->_boardIndex);
+	secondComponent->_finalPosition = positionForIndex(secondComponent->_boardIndex);
+	firstComponent->_swappingWith = secondComponent;
+	secondComponent->_swappingWith = firstComponent;
 }
 
-void GemsSystem::cancelGemSwap() {
-	SDL_assert(!_swapedEntities.empty());
-
-	Entity* firstEntity = _swapedEntities[0];
-	Entity* secondEntity = _swapedEntities[1];
-	GemsComponent* firstComponent = static_cast<GemsComponent*>(firstEntity->getComponentWithType(ComponentType::Gem));
-	GemsComponent* secondComponent = static_cast<GemsComponent*>(secondEntity->getComponentWithType(ComponentType::Gem));
-	TransformComponent* firstTransform = static_cast<TransformComponent*>(firstEntity->getComponentWithType(ComponentType::Transform));
-	TransformComponent* secondTransform = static_cast<TransformComponent*>(secondEntity->getComponentWithType(ComponentType::Transform));
-
+void GemsSystem::cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>& swapPair) {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Failed to swap, swapping back");
 
-	// Swap positions
-	const auto firstPosition = firstTransform->position();
-	firstTransform->setPosition(secondTransform->position());
-	secondTransform->setPosition(firstPosition);
+	GemsComponent* firstComponent = swapPair.first;
+	GemsComponent* secondComponent = swapPair.second;
 
-	// Swap on the board
 	std::swap(_board[firstComponent->index().x][firstComponent->index().y], _board[secondComponent->index().x][secondComponent->index().y]);
+	std::swap(firstComponent->_boardIndex, secondComponent->_boardIndex);
+	firstComponent->_gemStatus = secondComponent->_gemStatus = GemStatus::SwappingBack;
+	firstComponent->_finalPosition = positionForIndex(firstComponent->_boardIndex);
+	secondComponent->_finalPosition = positionForIndex(secondComponent->_boardIndex);
+	firstComponent->_swappingWith = secondComponent;
+	secondComponent->_swappingWith = firstComponent;
+}
 
-	// Swap indexes
-	const auto firstIndex = firstComponent->index();
-	firstComponent->onMovedInBoard(secondComponent->index());
-	secondComponent->onMovedInBoard(firstIndex);
+bool GemsSystem::tryChainDelete(GemsComponent* component) {
+	const NewBackToBackCount count = theNewBackToBackCount(component->index(), component->gemType());
+
+	bool couldDelete = false;
+	if (count.numHorizontalGems >= 3) {
+		couldDelete = true;
+		for (int i = 0; i < count.numHorizontalGems; i++) {
+			if (count.horizontalGems[i]->isActive())
+				removeEntity(count.horizontalGems[i]->index());
+		}
+	}
+	if (count.numVerticalGems >= 3) {
+		couldDelete = true;
+		for (int i = 0; i < count.numVerticalGems; i++) {
+			if (count.verticalGems[i]->isActive())
+				removeEntity(count.verticalGems[i]->index());
+		}
+	}
+
+	return couldDelete;
 }
 
 void GemsSystem::removeEntity(const glm::ivec2 index) {
@@ -239,6 +221,7 @@ void GemsSystem::removeEntity(const glm::ivec2 index) {
 void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 	if (gemComponent->canSwap()) {
 		if (_selectedGem == nullptr) {
+
 			_selectedGem = gemComponent;
 		}
 		else {
@@ -253,8 +236,8 @@ void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 	}
 }
 
-void GemsSystem::onGemSwapped(GemsComponent* gemsComponent) {
-	_dirty.push_back(gemsComponent->entity());
+void GemsSystem::onGemsSwapped(GemsComponent* firstComponent, GemsComponent* secondComponent) {
+	_swapedGems.emplace_back(firstComponent, secondComponent);
 }
 
 

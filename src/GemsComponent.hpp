@@ -58,6 +58,7 @@ private:
 	glm::vec2 _finalPosition;
 	glm::ivec2 _boardIndex{-1, -1};
     GemsSystem* _system = nullptr;
+	GemsComponent* _swappingWith = nullptr;
     RenderComponent* _renderComponent = nullptr;
 	GemType _gemType = GemType::INVALID;
 	GemStatus _gemStatus = GemStatus::INVALID;

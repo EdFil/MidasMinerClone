@@ -35,4 +35,5 @@ void GameScene::update(float delta) {
 
 void GameScene::onDestroy() {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "GameScene::onDestroy");
+	_engine->entitySystem()->releaseEntity(_background);
 }

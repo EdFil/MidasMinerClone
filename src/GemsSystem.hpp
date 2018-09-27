@@ -37,11 +37,12 @@ public:
 
 	void moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
 	void swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent);
-	void cancelGemSwap();
+	void cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>&  swapPair);
+	bool tryChainDelete(GemsComponent* component);
 	void removeEntity(const glm::ivec2 index);
 
 	void onGemClicked(GemsComponent* gemComponent);
-	void onGemSwapped(GemsComponent* gemsComponent);
+	void onGemsSwapped(GemsComponent* firstComponent, GemsComponent* secondComponent);
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
@@ -53,9 +54,9 @@ public:
 private:
 	std::default_random_engine randomGenerator;
     std::array<GemsComponent, k_numMaxGemsComponents> _components;
-    std::vector<Entity*> _waiting; // 8*8
-	std::vector<Entity*> _dirty; // 8*8
-	std::vector<Entity*> _swapedEntities; // 2
+    std::vector<Entity*> _waiting;
+	std::vector<Entity*> _dirty;
+	std::vector<std::pair<GemsComponent*, GemsComponent*>> _swapedGems;
     Engine* _engine = nullptr;
     Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
 	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};

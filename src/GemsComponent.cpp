@@ -7,6 +7,7 @@
 #include "GemsSystem.hpp"
 #include "Engine.hpp"
 #include "TextureManager.hpp"
+#include "glm/glm.hpp"
 
 TextureID textureIDForGemType(const GemType gemType) {
 	switch (gemType) {
@@ -54,7 +55,7 @@ void GemsComponent::onSwap(GemsComponent& gemComponent) {
 	std::swap(gemComponent._boardIndex, _boardIndex);
 
 	_finalPosition = GemsSystem::positionForIndex(_boardIndex);
-	gemComponent._finalPosition = GemsSystem::positionForIndex(_boardIndex);
+	gemComponent._finalPosition = GemsSystem::positionForIndex(gemComponent._boardIndex);
 
 	gemComponent._gemStatus = _gemStatus = GemStatus::Swapping;
 }
@@ -74,8 +75,8 @@ void GemsComponent::onMovedInBoard(const glm::vec<2, int>& index) {
 }
 
 void GemsComponent::onRemovedFromBoard() {
-    SDL_assert(_gemStatus == GemStatus::Rest);
-    SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
+	SDL_assert(_gemStatus == GemStatus::Rest || _gemStatus == GemStatus::Swapped);
+	SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
 
     _boardIndex = { -1, -1 };
 	_gemStatus = GemStatus::Despawned;
@@ -95,16 +96,27 @@ void GemsComponent::update(float delta) {
 			transform->setPosition(_finalPosition);
 			_gemStatus = GemStatus::Rest;
 		}
-	} else if (_gemStatus == GemStatus::Swapping) {
-		const int direction = transform->position().x > _finalPosition.x ? 1 : -1;
-		const float predictedFinalPosition = transform->position().x + k_swapSpeed * delta * direction;
-		if ((direction > 0 && predictedFinalPosition > _finalPosition.x) || 
-			(direction < 0 && predictedFinalPosition < _finalPosition.x)) {
+	} else if (_gemStatus == GemStatus::Swapping || _gemStatus == GemStatus::SwappingBack) {
+		// Auxiliary calculations
+		const glm::vec2 movementDelta{ k_swapSpeed * delta };
+		const glm::vec2 currentDirection = glm::normalize(_finalPosition - transform->position());
+		const glm::vec2 positionWithDelta = transform->position() + movementDelta * currentDirection;
+		const glm::vec2 directionAfterDelta = glm::normalize(positionWithDelta - transform->position());
+
+		// If we changed directions, we have gone too far, set to finalPosition and finish animation
+		if (currentDirection != directionAfterDelta) {
 			transform->setPosition(_finalPosition);
-			_gemStatus = GemStatus::Swapped;
-			_system->onGemSwapped(this);
+
+			if (_gemStatus == GemStatus::Swapping) {
+				_gemStatus = GemStatus::Swapped;
+				if (_swappingWith->_gemStatus == GemStatus::Swapped) {
+					_system->onGemsSwapped(this, _swappingWith);
+				}
+			} else {
+				_gemStatus = GemStatus::Rest;
+			}
 		} else {
-			transform->setPositionX(predictedFinalPosition);
+			transform->setPosition(positionWithDelta);
 		}
 	}
 }

@@ -47,7 +47,6 @@ bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 	_renderSystem.initialize();
     _eventDispatcher->initialize();
 
-	g_text = _textureManager->loadText("Test", "OpenSans-Bold.ttf", 32, SDL_Color{255, 0, 0, 255});
 	_textureManager->preloadAllTextures();
     _eventDispatcher->registerForApplicationEvents(this);
 	setScene(std::move(scene));
@@ -57,7 +56,6 @@ bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 
 void Engine::cleanup() {
     _eventDispatcher->unregisterForApplicationEvents(this);
-	g_text.reset();
 
 	if(_renderer)
 		SDL_DestroyRenderer(_renderer);
@@ -97,10 +95,6 @@ void Engine::mainLoop() {
 		SDL_RenderClear(_renderer);
 
         _renderSystem.draw(_renderer);
-
-		SDL_Rect rect{0};
-		SDL_QueryTexture(g_text->texture, nullptr, nullptr, &rect.w, &rect.h);
-		SDL_RenderCopy(_renderer, g_text->texture, nullptr, &rect);
 
 		SDL_RenderPresent(_renderer);
 	}
