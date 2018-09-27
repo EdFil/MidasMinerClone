@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <ecs/Component.hpp>
 #include <EventDispatcher.hpp>
@@ -17,6 +18,14 @@ enum class GemType {
 	COUNT
 };
 
+enum class GemStatus {
+	INVALID = -1,
+	Despawned,
+	Rest,
+	Falling,
+	Swapping
+};
+
 class GemsComponent : public Component, public MouseEventDelegate {
 public:
 	void release() override;
@@ -27,9 +36,13 @@ public:
 	void onAddedToBoard(const glm::vec<2, int>& index);
 	void onMovedInBoard(const glm::vec<2, int>& index);
 	void onRemovedFromBoard();
+	void update(float delta);
 
-	const glm::vec<2, int>& index() const { return _boardIndex; }
+	const glm::ivec2& index() const { return _boardIndex; }
 	GemType gemType() const { return _gemType; }
+	bool isActive() const { return _gemStatus != GemStatus::INVALID && _gemStatus != GemStatus::Despawned; }
+	bool canSwap() const { return _gemStatus == GemStatus::Rest; }
+	bool canBeMatchedWith(const GemType gemType) const { return _gemStatus == GemStatus::Rest && _gemType == gemType; }
 
 	void setGemType(GemType gemType);
 
@@ -38,11 +51,12 @@ public:
 	bool onMouseMotion(int x, int y) override;
 
 private:
-	glm::vec<2, int> _boardIndex{-1, -1};
+	glm::vec2 _finalPosition;
+	glm::ivec2 _boardIndex{-1, -1};
     GemsSystem* _system = nullptr;
     RenderComponent* _renderComponent = nullptr;
 	GemType _gemType = GemType::INVALID;
-    bool _isActive = false;
+	GemStatus _gemStatus = GemStatus::INVALID;
 
     friend GemsSystem;
 };

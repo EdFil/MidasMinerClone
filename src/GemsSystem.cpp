@@ -21,14 +21,8 @@
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
-static const glm::vec2 k_startPosition = glm::vec2(320, 92);
-static const int k_spawnHeight = 60;
-
-glm::vec2 positionForIndex(const glm::vec<2, int> index) {
-    int y = k_numGemsY - 1 - index.y;
-    return glm::vec2(k_startPosition.x + k_gemPadding * (index.x + 1) + index.x * k_gemSize,
-                     k_startPosition.y + k_gemPadding * (y + 1) + y * k_gemSize);
-}
+static const glm::vec2 k_startPosition = glm::vec2(320, 92 - (k_gemPadding * (k_numGemsY - 9 + 1) + (k_numGemsY - 8) * k_gemSize));
+static const int k_spawnHeight = k_startPosition.y;
 
 bool GemsSystem::initialize(Engine* engine) {
     _gameState = GameState::Initializing;
@@ -64,14 +58,17 @@ bool GemsSystem::initialize(Engine* engine) {
 }
 
 void GemsSystem::update(float delta) {
-	static int i = 0;
-	if (i++ % 60 != 0) return;
+	memset(_currentFrameSpawnOffset, 0, sizeof(_currentFrameSpawnOffset));
+
+	for(auto& component : _components) {
+		component.update(delta);
+	}
 
 	if (!_swapedEntities.empty()) {
 		bool wasSwapValid = false;
 		for (Entity* entity : _swapedEntities) {
 			GemsComponent* gemComponent = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gemComponent->_isActive) {
+			if (gemComponent->canSwap()) {
 				NewBackToBackCount count = theNewBackToBackCount(gemComponent->index(), gemComponent->gemType());
 				if (count.numHorizontalGems > 2) {
 					wasSwapValid = true;
@@ -97,17 +94,17 @@ void GemsSystem::update(float delta) {
 	if (!_dirty.empty()) {
 		for (Entity* entity : _dirty) {
 			auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gem->_isActive) {
+			if (gem->isActive()) {
 				const NewBackToBackCount backToBackGems = theNewBackToBackCount(gem->index(), gem->gemType());
 				if (backToBackGems.numHorizontalGems >= 3) {
 					for (int i = 0; i < backToBackGems.numHorizontalGems; i++) {
-						if (backToBackGems.horizontalGems[i]->_isActive)
+						if (backToBackGems.horizontalGems[i]->isActive())
 							removeEntity(backToBackGems.horizontalGems[i]->index());
 					}
 				}
 				if (backToBackGems.numVerticalGems >= 3) {
 					for (int i = 0; i < backToBackGems.numVerticalGems; i++) {
-						if (backToBackGems.verticalGems[i]->_isActive)
+						if (backToBackGems.verticalGems[i]->isActive())
 							removeEntity(backToBackGems.verticalGems[i]->index());
 					}
 				}
@@ -144,6 +141,12 @@ void GemsSystem::update(float delta) {
 			createNewRandomGemOnIndex({x, vacantIndex});
 		}
     }
+}
+
+glm::vec2 GemsSystem::positionForIndex(const glm::ivec2& index) {
+	int y = k_numGemsY - 1 - index.y;
+	return glm::vec2(k_startPosition.x + k_gemPadding * (index.x + 1) + index.x * k_gemSize,
+					 k_startPosition.y + k_gemPadding * (y + 1) + y * k_gemSize);
 }
 
 void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex) {
@@ -229,16 +232,23 @@ void GemsSystem::removeEntity(const glm::ivec2 index) {
 }
 
 void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
-	if(_selectedGem == nullptr) {
-		_selectedGem = gemComponent;
+	if (gemComponent->canSwap()) {
+		if (_selectedGem == nullptr) {
+			_selectedGem = gemComponent;
+		}
+		else {
+			const glm::ivec2 gemDistance = glm::abs(_selectedGem->index() - gemComponent->index());
+			if (gemDistance.x + gemDistance.y == 1)
+				swapGems(gemComponent, _selectedGem);
+
+			_selectedGem = nullptr;
+		}
 	} else {
-		const glm::ivec2 gemDistance = glm::abs(_selectedGem->index() - gemComponent->index());
-		if(gemDistance.x + gemDistance.y == 1)
-			swapGems(gemComponent, _selectedGem);
 		
-		_selectedGem = nullptr;
 	}
 }
+
+
 
 GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
     for(GemsComponent& component : _components) {
@@ -257,15 +267,15 @@ void GemsSystem::releaseComponent(GemsComponent *component) {
     component->cleanup();
 }
 
-void GemsSystem::createNewRandomGemOnIndex(const glm::vec<2, int>& index) {
+void GemsSystem::createNewRandomGemOnIndex(const glm::ivec2& index) {
 	SDL_assert(!_waiting.empty());
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Spawn a new gem to [%d][%d]", index.x, index.y);
 
 	Entity* entityToBeSpawned = _waiting.back();
-	_waiting.pop_back();
 
 	auto transform = static_cast<TransformComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Transform));
-	transform->setPosition(positionForIndex(index));
+	transform->setPosition({ positionForIndex(index).x, k_spawnHeight - _currentFrameSpawnOffset[index.x] });
+	_currentFrameSpawnOffset[index.x] += k_gemSize + k_gemPadding;
 
 	auto render = static_cast<RenderComponent*>(entityToBeSpawned->getComponentWithType(ComponentType::Render));
 	render->setIsVisible(true);
@@ -275,6 +285,7 @@ void GemsSystem::createNewRandomGemOnIndex(const glm::vec<2, int>& index) {
 	gem->onAddedToBoard(index);
 
 	_board[index.x][index.y] = entityToBeSpawned;
+	_waiting.pop_back();
 }
 
 NewBackToBackCount GemsSystem::theNewBackToBackCount(const glm::ivec2& index, const GemType gemType) {

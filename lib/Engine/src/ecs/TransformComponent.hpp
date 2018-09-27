@@ -12,6 +12,7 @@ public:
 	void release() override;
 
 	const glm::vec2& position() const { return _position; }
+	void setPositionY(const float y) { _position.y = y; }
 	void setPosition(const glm::vec2& position) { _position = position; }
 	void setPosition(const float x, const float y) { setPosition(glm::vec2(x, y)); }
 

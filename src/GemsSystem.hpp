@@ -33,6 +33,7 @@ public:
     void update(float delta);
 
     Engine* engine() const { return _engine; }
+	static glm::vec2 positionForIndex(const glm::ivec2& index);
 
 	void moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
 	void swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent);
@@ -55,9 +56,9 @@ private:
 	std::vector<Entity*> _dirty; // 8*8
 	std::vector<Entity*> _swapedEntities; // 2
     Engine* _engine = nullptr;
-    Entity* _board[8][8] = { nullptr };
+    Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
+	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};
 	GemsComponent* _selectedGem = nullptr;
     GameState _gameState = GameState::INVALID;
-    long _lastTimeSpawned[8] = {0};
 };
 

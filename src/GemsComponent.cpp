@@ -29,40 +29,53 @@ void GemsComponent::release() {
 bool GemsComponent::initialize(GemsSystem* system, RenderComponent* renderComponent) {
     _system = system;
     _renderComponent = renderComponent;
-    _isActive = false;
+	_gemStatus = GemStatus::Despawned;
     
     return _system != nullptr && _renderComponent != nullptr;
 }
 
 void GemsComponent::cleanup() {
-    SDL_assert(!_isActive);
+    SDL_assert(!isActive());
 
     _renderComponent = nullptr;
 }
 
 void GemsComponent::onAddedToBoard(const glm::vec<2, int>& index) {
-    SDL_assert(!_isActive);
+    SDL_assert(_gemStatus == GemStatus::Despawned);
     SDL_assert(_boardIndex.x == -1 && _boardIndex.y == -1);
 
 	_boardIndex = index;
-    _isActive = true;
+	_gemStatus = GemStatus::Falling;
+	_finalPosition = _system->positionForIndex(index);
     _system->engine()->eventDispatcher()->registerForMouseEvents(this);
 }
 
 void GemsComponent::onMovedInBoard(const glm::vec<2, int>& index) {
-    SDL_assert(_isActive);
+    SDL_assert(_gemStatus == GemStatus::Rest);
     SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
 
 	_boardIndex = index;
 }
 
 void GemsComponent::onRemovedFromBoard() {
-    SDL_assert(_isActive);
+    SDL_assert(_gemStatus == GemStatus::Rest);
     SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
 
     _boardIndex = { -1, -1 };
-	_isActive = false;
+	_gemStatus = GemStatus::Despawned;
     _system->engine()->eventDispatcher()->unregisterForMouseEvents(this);
+}
+
+void GemsComponent::update(float delta) {
+	if(_gemStatus == GemStatus::Falling) {
+		TransformComponent* transform = _renderComponent->transformComponent();
+		if(transform->position().y <= _finalPosition.y) {
+			transform->setPositionY(transform->position().y + k_fallSpeed * delta);
+		} else {
+			transform->setPosition(_finalPosition);
+			_gemStatus = GemStatus::Rest;
+		}
+	}
 }
 
 void GemsComponent::setGemType(GemType gemType) {

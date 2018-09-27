@@ -87,7 +87,6 @@ void Engine::setScene(std::unique_ptr<Scene>&& scene) {
 void Engine::mainLoop() {
 	while (_isRunning) {
 		_eventDispatcher->update();
-		//_gemsSystem->update(0.16f);
 
 		if(_runningScene != nullptr) {
 			_runningScene->update(0.16f);
