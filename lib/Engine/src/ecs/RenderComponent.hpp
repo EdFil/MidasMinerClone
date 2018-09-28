@@ -14,6 +14,7 @@ public:
 
     bool initialize(TransformComponent* transformComponent, SDL_Texture* texture);
 	void setTexture(SDL_Texture* texture);
+	void deleteTexture();
 
     void draw(SDL_Renderer* renderer);
 

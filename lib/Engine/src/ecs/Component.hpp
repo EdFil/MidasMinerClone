@@ -5,6 +5,7 @@ class Entity;
 enum class ComponentType {
 	Transform = 0,
 	Render = 1,
+	Text,
 	Gem,
 	COUNT
 };

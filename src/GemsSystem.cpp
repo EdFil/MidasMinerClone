@@ -11,14 +11,13 @@
 #include <SDL_render.h>
 #include <SDL_log.h>
 #include <SDL_assert.h>
-#include "glm/integer.hpp"
+#include <glm/integer.hpp>
 
 #include <Engine.hpp>
 #include <TextureManager.hpp>
 #include <ecs/EntitySystem.hpp>
 #include <ecs/TransformSystem.hpp>
 #include <ecs/RenderSystem.hpp>
-#include <xmmintrin.h>
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
@@ -31,22 +30,24 @@ bool GemsSystem::initialize(Engine* engine) {
     _engine = engine;
 	randomGenerator.seed(time(nullptr));
 
-    for(GemsComponent& component : _components) {
-        component.type = ComponentType::Gem;
-    }
+	// TODO: Try to assign this at compile time to avoid this loop
+	for (GemsComponent& component : _components) {
+		component.type = ComponentType::Gem;
+	}
 
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
-	_dirty.reserve(numGems);
+	_gemsThatFell.reserve(numGems);
 	_swappedGems.reserve(2); // We will probably not need to keep track of more than 4 swaps
 
+	// Create all the entities
     for(size_t i = 0; i < numGems; i++) {
-        auto transform = engine->transformSystem()->createComponent();
+	    const auto transform = engine->transformSystem()->createComponent();
 
         auto render = engine->renderSystem()->createComponent(transform, nullptr);
         render->setIsVisible(false);
 
-        auto gemsComponent = createComponent(render);
+	    const auto gemsComponent = createComponent(render);
 
         auto entity = engine->entitySystem()->createEntity();
         entity->addComponent(transform);
@@ -64,6 +65,7 @@ bool GemsSystem::initialize(Engine* engine) {
 	_selectedGemCross->addComponent(transform);
 	_selectedGemCross->addComponent(render);
 	
+	_timeLeft = 60.0f;
 
     return false;
 }
@@ -71,6 +73,27 @@ bool GemsSystem::initialize(Engine* engine) {
 void GemsSystem::update(float delta) {
 	memset(_currentFrameSpawnOffset, 0, sizeof(_currentFrameSpawnOffset));
 
+	// Check game state
+	if (_gameState == GameState::Initializing) {
+		auto it = _components.cbegin();
+		for (; it != _components.cend(); ++it) {
+			if (it->gemStatus() != GemStatus::Rest) 
+				break;
+		}
+		if (it == _components.cend()) {
+			_gameState = GameState::Running;
+		}
+	} else if(_gameState == GameState::Running) {
+		_timeLeft -= delta;
+		updateTimeLabel();
+		if(_timeLeft <= 0) {
+			_gameState = GameState::Ended;
+		}
+	} else {
+		
+	}
+
+	// Check if some some finished swap animations
 	if(!_swappedGems.empty()) {
 		for (auto& swapPair : _swappedGems) {
 			bool couldSwap1 = tryChainDelete(swapPair.first);
@@ -88,33 +111,20 @@ void GemsSystem::update(float delta) {
 		_swappedGems.clear();
 	}
 
-	if (!_dirty.empty()) {
-		for (Entity* entity : _dirty) {
-			auto* gem = static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem));
-			if (gem->canBeRemoved()) {
-				const NewBackToBackCount backToBackGems = theNewBackToBackCount(gem->index(), gem->gemType());
-				if (backToBackGems.numHorizontalGems >= 3) {
-					for (int i = 0; i < backToBackGems.numHorizontalGems; i++) {
-						if (backToBackGems.horizontalGems[i]->canBeRemoved())
-							removeEntity(backToBackGems.horizontalGems[i]->index());
-						}
-				}
-				if (backToBackGems.numVerticalGems >= 3) {
-					for (int i = 0; i < backToBackGems.numVerticalGems; i++) {
-						if (backToBackGems.verticalGems[i]->canBeRemoved())
-							removeEntity(backToBackGems.verticalGems[i]->index());
-					}
-				}
-			}
+	// Check if some gem fell and need to 
+	if (!_gemsThatFell.empty()) {
+		for (Entity* entity : _gemsThatFell) {
+			tryChainDelete(static_cast<GemsComponent*>(entity->getComponentWithType(ComponentType::Gem)));
 		}
 
-		_dirty.clear();
+		_gemsThatFell.clear();
 	}
 
 	for (auto& component : _components) {
 		component.update(delta);
 	}
 
+	// TODO: Don't check the entire board all frames, use callbacks/dirty flags
     for(int x = 0; x < k_numGemsX; x++) {
         // Start going from bottom to top to find a vacant position
         int vacantIndex = 0;
@@ -132,7 +142,7 @@ void GemsSystem::update(float delta) {
 		for (; occupiedIndex < k_numGemsY; occupiedIndex++) {
 			if(_board[x][occupiedIndex] == nullptr) continue; // If we have powers, it's possible to have multiple holes
 
-			moveEntityFromTo({x, occupiedIndex}, {x, vacantIndex});
+			makeGemFallFromTo({x, occupiedIndex}, {x, vacantIndex});
 			vacantIndex++;
 		}
 
@@ -143,13 +153,18 @@ void GemsSystem::update(float delta) {
     }
 }
 
+void GemsSystem::updateTimeLabel() {
+	TextComponent* textComponent = static_cast<TextComponent*>(_timeEntity->getComponentWithType(ComponentType::Text));
+	textComponent->setText(std::to_string(static_cast<int>(_timeLeft)), TextureManager::k_defaultFontName, 50, SDL_Color{ 0, 0, 255 });
+}
+
 glm::vec2 GemsSystem::positionForIndex(const glm::ivec2& index) {
 	int y = k_numGemsY - 1 - index.y;
 	return glm::vec2(k_startPosition.x + k_gemPadding * (index.x + 1) + index.x * k_gemSize,
 					 k_startPosition.y + k_gemPadding * (y + 1) + y * k_gemSize);
 }
 
-void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex) {
+void GemsSystem::makeGemFallFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex) {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Moving Gem from [%d][%d] to [%d][%d]", fromIndex.x, fromIndex.y, toIndex.x, toIndex.y);
 
 	std::swap(_board[fromIndex.x][fromIndex.y], _board[toIndex.x][toIndex.y]);
@@ -205,20 +220,21 @@ void GemsSystem::cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>& 
 }
 
 bool GemsSystem::tryChainDelete(GemsComponent* component) {
-	const NewBackToBackCount count = theNewBackToBackCount(component->index(), component->gemType());
+	if (!component->canBeRemoved()) return false;
 
+	const NewBackToBackCount count = theNewBackToBackCount(component->index(), component->gemType());
 	bool couldDelete = false;
 	if (count.numHorizontalGems >= 3) {
 		couldDelete = true;
 		for (int i = 0; i < count.numHorizontalGems; i++) {
-			if (count.horizontalGems[i]->isActive())
+			if (count.horizontalGems[i]->canBeRemoved())
 				removeEntity(count.horizontalGems[i]->index());
 		}
 	}
 	if (count.numVerticalGems >= 3) {
 		couldDelete = true;
 		for (int i = 0; i < count.numVerticalGems; i++) {
-			if (count.verticalGems[i]->isActive())
+			if (count.verticalGems[i]->canBeRemoved())
 				removeEntity(count.verticalGems[i]->index());
 		}
 	}
@@ -288,7 +304,7 @@ void GemsSystem::onGemsSwapped(GemsComponent* firstComponent, GemsComponent* sec
 }
 
 void GemsSystem::onFinishedFalling(GemsComponent* gemComponent) {
-	_dirty.emplace_back(gemComponent->entity());
+	_gemsThatFell.emplace_back(gemComponent->entity());
 }
 
 
@@ -313,16 +329,28 @@ void GemsSystem::createScoreLabels() {
 	TransformComponent* transform = _engine->transformSystem()->createComponent();
 	transform->setPosition(k_timePosition);
 	
-	SDL_Texture* texture = _engine->textureManager()->loadText("60", TextureManager::k_defaultFontName, 50, SDL_Color{ 0, 0, 255 });
-	RenderComponent* render = _engine->renderSystem()->createComponent(transform, texture);
+	RenderComponent* render = _engine->renderSystem()->createComponent(transform, nullptr);
+	TextComponent* text = _engine->textSystem()->createComponent(render);
 
 	_timeEntity = _engine->entitySystem()->createEntity();
 	_timeEntity->addComponent(transform);
 	_timeEntity->addComponent(render);
+	_timeEntity->addComponent(text);
+
+	updateTimeLabel();
 }
 
-void GemsSystem::updateTimeLabel(float delta) {
-	_timeElapsed += delta;
+void GemsSystem::restartGame() {
+	for(GemsComponent& component : _components) {
+		component.onRemovedFromBoard();
+		_waiting.push_back(component.entity());
+	}
+
+	for(int x = 0; x < k_numGemsX; x++)
+		for (int y = 0; y < k_numGemsY; y++)
+			_board[x][y] = nullptr;
+
+	_timeLeft = 60.0f;
 }
 
 void GemsSystem::createNewRandomGemOnIndex(const glm::ivec2& index) {

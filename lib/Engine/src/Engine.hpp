@@ -5,6 +5,7 @@
 #include "ecs/TransformSystem.hpp"
 #include "ecs/RenderSystem.hpp"
 #include "EventDispatcher.hpp"
+#include "ecs/TextSystem.hpp"
 
 struct SDL_Window;
 struct SDL_Renderer;
@@ -26,6 +27,8 @@ public:
     RenderSystem* renderSystem() { return &_renderSystem; }
     TextureManager* textureManager() { return _textureManager.get(); }
     EventDispatcher* eventDispatcher() { return _eventDispatcher.get(); }
+	TextSystem* textSystem() { return &_textSystem; }
+	
 
 	void onQuit() override;
 
@@ -38,6 +41,8 @@ private:
 	EntitySystem _entitySystem;
 	TransformSystem _transformSystem;
 	RenderSystem _renderSystem;
+	TextSystem _textSystem;
+	unsigned _lastGetTicksTime = 0;
 
 	SDL_Window* _window = nullptr;
 	SDL_Renderer* _renderer = nullptr;

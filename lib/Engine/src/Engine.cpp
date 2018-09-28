@@ -44,6 +44,7 @@ bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 	_transformSystem.initialize();
 	_renderSystem.initialize();
     _eventDispatcher->initialize();
+	_textSystem.initialize(this);
 
 	_textureManager->preloadAllTextures();
     _eventDispatcher->registerForApplicationEvents(this);
@@ -64,6 +65,7 @@ void Engine::cleanup() {
 
 void Engine::run() {
 	_isRunning = true;
+	_lastGetTicksTime = SDL_GetTicks();
 	mainLoop();
 }
 
@@ -81,11 +83,17 @@ void Engine::setScene(std::unique_ptr<Scene>&& scene) {
 }
 
 void Engine::mainLoop() {
+
 	while (_isRunning) {
+		unsigned currentTime = SDL_GetTicks();
+		float delta = static_cast<float>(currentTime - _lastGetTicksTime) / 1000.0f;
+		_lastGetTicksTime = currentTime;
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%f", delta);
+
 		_eventDispatcher->update();
 
 		if(_runningScene != nullptr) {
-			_runningScene->update(0.16f);
+			_runningScene->update(delta);
 		}
 
 		// Render Scene

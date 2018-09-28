@@ -30,6 +30,13 @@ void RenderComponent::setTexture(SDL_Texture* texture) {
 	}
 }
 
+void RenderComponent::deleteTexture() {
+	if(_texture != nullptr) {
+		SDL_DestroyTexture(_texture);
+		_texture = nullptr;
+	}
+}
+
 void RenderComponent::draw(SDL_Renderer* renderer) {
     if(_isVisible && _texture != nullptr) {
         const auto &position = _transformComponent->position();

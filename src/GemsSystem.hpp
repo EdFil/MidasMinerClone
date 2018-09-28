@@ -29,13 +29,15 @@ struct NewBackToBackCount {
 class GemsSystem {
 public:
     bool initialize(Engine* engine);
-
     void update(float delta);
+	void updateTimeLabel();
+	void createScoreLabels();
+	void restartGame();
 
     Engine* engine() const { return _engine; }
 	static glm::vec2 positionForIndex(const glm::ivec2& index);
 
-	void moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
+	void makeGemFallFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
 	bool trySwapGem(GemsComponent* gemComponent, const glm::ivec2& index);
 	void swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent);
 	void cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>&  swapPair);
@@ -53,8 +55,6 @@ public:
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
-	void createScoreLabels();
-	void updateTimeLabel(float delta);
 
 	void createNewRandomGemOnIndex(const glm::ivec2& index);
 	NewBackToBackCount theNewBackToBackCount(const glm::ivec2& index, const GemType gemType);
@@ -64,14 +64,14 @@ private:
 	std::default_random_engine randomGenerator;
     std::array<GemsComponent, k_numMaxGemsComponents> _components;
     std::vector<Entity*> _waiting;
-	std::vector<Entity*> _dirty;
+	std::vector<Entity*> _gemsThatFell;
 	std::vector<std::pair<GemsComponent*, GemsComponent*>> _swappedGems;
     Engine* _engine = nullptr;
     Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
 	Entity* _selectedGemCross{nullptr};
 	Entity* _timeEntity{nullptr};
 	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};
-	float _timeElapsed{0.0f};
+	float _timeLeft{0.0f};
 	GemsComponent* _selectedGem = nullptr;
     GameState _gameState = GameState::INVALID;
 };
