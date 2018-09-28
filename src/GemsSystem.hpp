@@ -36,12 +36,17 @@ public:
 	static glm::vec2 positionForIndex(const glm::ivec2& index);
 
 	void moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
+	bool trySwapGem(GemsComponent* gemComponent, const glm::ivec2& index);
 	void swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent);
 	void cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>&  swapPair);
 	bool tryChainDelete(GemsComponent* component);
 	void removeEntity(const glm::ivec2 index);
 
 	void onGemClicked(GemsComponent* gemComponent);
+	void onGemSwipedLeft(GemsComponent* gemComponent);
+	void onGemSwipedRight(GemsComponent* gemComponent);
+	void onGemSwipedUp(GemsComponent* gemComponent);
+	void onGemSwipedDown(GemsComponent* gemComponent);
 	void onGemsSwapped(GemsComponent* firstComponent, GemsComponent* secondComponent);
 	void onFinishedFalling(GemsComponent* gemComponent);
 

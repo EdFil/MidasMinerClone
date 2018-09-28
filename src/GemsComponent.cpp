@@ -9,6 +9,8 @@
 #include "TextureManager.hpp"
 #include "glm/glm.hpp"
 
+static const int k_deltaForSwipe = 10;
+
 TextureID textureIDForGemType(const GemType gemType) {
 	switch (gemType) {
 		case GemType::Blue: return TextureID::Blue;
@@ -158,8 +160,20 @@ bool GemsComponent::onLeftMouseUp(int x, int y) {
 		if(!_isDragging) {
 			_system->onGemClicked(this);
 		} else {
-			TransformComponent* transformComponent = _renderComponent->transformComponent();
-			transformComponent->setPosition(GemsSystem::positionForIndex(_boardIndex));
+			const auto translation = glm::ivec2{ x, y } -_mouseDownPosition;
+			if (abs(translation.x) >= abs(translation.y)) {
+				if(translation.x < -k_deltaForSwipe) {
+					_system->onGemSwipedLeft(this);
+				} else if(translation.x > k_deltaForSwipe) {
+					_system->onGemSwipedRight(this);
+				}
+			} else {
+				if(translation.y > -k_deltaForSwipe) {
+					_system->onGemSwipedDown(this);
+				} else if (translation.y < k_deltaForSwipe){
+					_system->onGemSwipedUp(this);
+				}
+			}
 		}
 
 		_isDragging = false;
@@ -178,11 +192,9 @@ bool GemsComponent::onMouseMotion(int x, int y) {
 	}
 
 	if (_isDragging) {
-		TransformComponent* transformComponent = _renderComponent->transformComponent();
-		const auto dragDelta = _mouseDownPosition - glm::ivec2{ x, y };
-		transformComponent->setPosition(GemsSystem::positionForIndex(_boardIndex) - glm::vec2(dragDelta.x, dragDelta.y));
+		
 	}
 
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Is Dragging %d", _isDragging);
-	return false;
+	return true;
 }

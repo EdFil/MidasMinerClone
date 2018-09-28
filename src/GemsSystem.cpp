@@ -159,6 +159,22 @@ void GemsSystem::moveEntityFromTo(const glm::ivec2& fromIndex, const glm::ivec2&
 	gem->_finalPosition = positionForIndex(toIndex);
 }
 
+bool GemsSystem::trySwapGem(GemsComponent* gemComponent, const glm::ivec2& index) {
+	if (gemComponent->index().x == 0 || !gemComponent->canSwap())
+		return false;
+
+	Entity* otherEntity = _board[index.x][index.y];
+	if (otherEntity != nullptr) {
+		const auto otherGem = static_cast<GemsComponent*>(otherEntity->getComponentWithType(ComponentType::Gem));
+		if (otherGem->canSwap()) {
+			swapGems(gemComponent, otherGem);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent) {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Trying to swap [%d][%d] with [%d][%d]", firstComponent->index().x, firstComponent->index().y, secondComponent->index().x, secondComponent->index().y);
 
@@ -247,6 +263,22 @@ void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 	} else {
 		
 	}
+}
+
+void GemsSystem::onGemSwipedLeft(GemsComponent* gemComponent) {
+	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x - 1, gemComponent->index().y));
+}
+
+void GemsSystem::onGemSwipedRight(GemsComponent* gemComponent) {
+	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x + 1, gemComponent->index().y));
+}
+
+void GemsSystem::onGemSwipedUp(GemsComponent* gemComponent) {
+	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x, gemComponent->index().y + 1));
+}
+
+void GemsSystem::onGemSwipedDown(GemsComponent* gemComponent) {
+	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x, gemComponent->index().y - 1));
 }
 
 void GemsSystem::onGemsSwapped(GemsComponent* firstComponent, GemsComponent* secondComponent) {
