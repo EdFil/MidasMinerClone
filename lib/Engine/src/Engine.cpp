@@ -12,8 +12,6 @@
 Engine::Engine() { }
 Engine::~Engine() { }
 
-std::unique_ptr<TextureWrapper> g_text;
-
 bool Engine::initialize(std::unique_ptr<Scene>&& scene) {
 	srand(time(nullptr));
 

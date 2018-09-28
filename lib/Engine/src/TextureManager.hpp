@@ -6,7 +6,6 @@
 #include <unordered_set>
 
 class Engine;
-struct TextureWrapper;
 typedef struct _TTF_Font TTF_Font;
 typedef struct SDL_Color;
 struct SDL_Texture;
@@ -29,10 +28,12 @@ enum class FontID {
 
 class TextureManager {
 public:
+	static const char k_defaultFontName[];
+
 	TextureManager(Engine* engine);
 
     SDL_Texture* loadTexture(const TextureID textureID);
-	std::unique_ptr<TextureWrapper> loadText(const char* text, const char* fontName, unsigned fontSize, const SDL_Color& color);
+	SDL_Texture* loadText(const char* text, const char* fontName, unsigned fontSize, const SDL_Color& color);
 	void deleteTexture(SDL_Texture* texture);
 
 	// Helper functions
@@ -44,12 +45,4 @@ private:
     std::unordered_map<TextureID, SDL_Texture*> _cachedTextures;
 
     std::string fullPathForTextureID(TextureID textureID) const;
-};
-
-struct TextureWrapper {
-	SDL_Texture* texture;
-	TextureManager* manager;
-
-	TextureWrapper(SDL_Texture* texture, TextureManager* manager) : texture(texture), manager(manager) { }
-	~TextureWrapper() {  manager->deleteTexture(texture); }
 };

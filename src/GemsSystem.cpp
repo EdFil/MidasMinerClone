@@ -18,10 +18,12 @@
 #include <ecs/EntitySystem.hpp>
 #include <ecs/TransformSystem.hpp>
 #include <ecs/RenderSystem.hpp>
+#include <xmmintrin.h>
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;
 static const glm::vec2 k_startPosition = glm::vec2(320, 92);
+static const glm::vec2 k_timePosition = glm::vec2(90, 430);
 static const float k_spawnHeight = k_startPosition.y - k_gemSize - k_gemPadding;
 
 bool GemsSystem::initialize(Engine* engine) {
@@ -36,7 +38,7 @@ bool GemsSystem::initialize(Engine* engine) {
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
 	_dirty.reserve(numGems);
-	_swapedGems.reserve(2); // We will probably not need to keep track of more than 4 swaps
+	_swappedGems.reserve(2); // We will probably not need to keep track of more than 4 swaps
 
     for(size_t i = 0; i < numGems; i++) {
         auto transform = engine->transformSystem()->createComponent();
@@ -69,8 +71,8 @@ bool GemsSystem::initialize(Engine* engine) {
 void GemsSystem::update(float delta) {
 	memset(_currentFrameSpawnOffset, 0, sizeof(_currentFrameSpawnOffset));
 
-	if(!_swapedGems.empty()) {
-		for (auto& swapPair : _swapedGems) {
+	if(!_swappedGems.empty()) {
+		for (auto& swapPair : _swappedGems) {
 			bool couldSwap1 = tryChainDelete(swapPair.first);
 			bool couldSwap2 = tryChainDelete(swapPair.second);
 			bool couldSwap = couldSwap1 || couldSwap2;
@@ -83,7 +85,7 @@ void GemsSystem::update(float delta) {
 			}
 		}
 
-		_swapedGems.clear();
+		_swappedGems.clear();
 	}
 
 	if (!_dirty.empty()) {
@@ -282,7 +284,7 @@ void GemsSystem::onGemSwipedDown(GemsComponent* gemComponent) {
 }
 
 void GemsSystem::onGemsSwapped(GemsComponent* firstComponent, GemsComponent* secondComponent) {
-	_swapedGems.emplace_back(firstComponent, secondComponent);
+	_swappedGems.emplace_back(firstComponent, secondComponent);
 }
 
 void GemsSystem::onFinishedFalling(GemsComponent* gemComponent) {
@@ -305,6 +307,22 @@ GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
 void GemsSystem::releaseComponent(GemsComponent *component) {
     component->isUsed = false;
     component->cleanup();
+}
+
+void GemsSystem::createScoreLabels() {
+	TransformComponent* transform = _engine->transformSystem()->createComponent();
+	transform->setPosition(k_timePosition);
+	
+	SDL_Texture* texture = _engine->textureManager()->loadText("60", TextureManager::k_defaultFontName, 50, SDL_Color{ 0, 0, 255 });
+	RenderComponent* render = _engine->renderSystem()->createComponent(transform, texture);
+
+	_timeEntity = _engine->entitySystem()->createEntity();
+	_timeEntity->addComponent(transform);
+	_timeEntity->addComponent(render);
+}
+
+void GemsSystem::updateTimeLabel(float delta) {
+	_timeElapsed += delta;
 }
 
 void GemsSystem::createNewRandomGemOnIndex(const glm::ivec2& index) {

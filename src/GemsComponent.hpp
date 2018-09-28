@@ -26,7 +26,8 @@ enum class GemStatus {
 	Falling,
 	Swapping,
 	Swapped,
-	SwappingBack
+	SwappingBack,
+	BeeingDestroyed
 };
 
 class GemsComponent : public Component, public MouseEventDelegate {

@@ -7,6 +7,7 @@
 
 #include "GameConstants.hpp"
 #include "GemsComponent.hpp"
+#include <memory>
 
 class Entity;
 class Engine;
@@ -25,7 +26,6 @@ struct NewBackToBackCount {
 	unsigned short numVerticalGems = 0;
 };
 
-
 class GemsSystem {
 public:
     bool initialize(Engine* engine);
@@ -42,6 +42,7 @@ public:
 	bool tryChainDelete(GemsComponent* component);
 	void removeEntity(const glm::ivec2 index);
 
+	// Gameplay Callbacks
 	void onGemClicked(GemsComponent* gemComponent);
 	void onGemSwipedLeft(GemsComponent* gemComponent);
 	void onGemSwipedRight(GemsComponent* gemComponent);
@@ -52,6 +53,8 @@ public:
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
+	void createScoreLabels();
+	void updateTimeLabel(float delta);
 
 	void createNewRandomGemOnIndex(const glm::ivec2& index);
 	NewBackToBackCount theNewBackToBackCount(const glm::ivec2& index, const GemType gemType);
@@ -62,11 +65,13 @@ private:
     std::array<GemsComponent, k_numMaxGemsComponents> _components;
     std::vector<Entity*> _waiting;
 	std::vector<Entity*> _dirty;
-	std::vector<std::pair<GemsComponent*, GemsComponent*>> _swapedGems;
+	std::vector<std::pair<GemsComponent*, GemsComponent*>> _swappedGems;
     Engine* _engine = nullptr;
     Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
-	Entity* _selectedGemCross;
+	Entity* _selectedGemCross{nullptr};
+	Entity* _timeEntity{nullptr};
 	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};
+	float _timeElapsed{0.0f};
 	GemsComponent* _selectedGem = nullptr;
     GameState _gameState = GameState::INVALID;
 };

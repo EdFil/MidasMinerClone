@@ -7,6 +7,8 @@
 #include "Engine.hpp"
 #include "Constants.hpp"
 
+const char TextureManager::k_defaultFontName[] = "OpenSans-Bold.ttf";
+
 TextureManager::TextureManager(Engine* engine) : _engine(engine) {
 	SDL_assert(_engine != nullptr);
 
@@ -46,8 +48,7 @@ SDL_Texture* TextureManager::loadTexture(const TextureID textureID) {
     return texture;
 }
 
-std::unique_ptr<TextureWrapper> TextureManager::loadText(const char* text, const char* fontName, unsigned fontSize, const SDL_Color& color) {
-	std::unique_ptr<TextureWrapper> textureWrapper;
+SDL_Texture* TextureManager::loadText(const char* text, const char* fontName, unsigned fontSize, const SDL_Color& color) {
 	std::string fullPath = std::string(RESOURCES_DIR) + fontName;
 
 	TTF_Font* font = nullptr;
@@ -74,7 +75,7 @@ std::unique_ptr<TextureWrapper> TextureManager::loadText(const char* text, const
 	SDL_Texture* textTexture = SDL_CreateTextureFromSurface(_engine->renderer(), surfaceText);
 	SDL_FreeSurface(surfaceText);
 
-	return std::make_unique<TextureWrapper>(textTexture, this);
+	return textTexture;
 }
 
 void TextureManager::deleteTexture(SDL_Texture* texture) {
