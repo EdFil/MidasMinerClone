@@ -3,7 +3,7 @@
 #include "Component.hpp"
 #include <string>
 
-typedef struct SDL_Color;
+typedef struct SDL_Color SDL_Color;
 class TextSystem;
 class RenderComponent;
 

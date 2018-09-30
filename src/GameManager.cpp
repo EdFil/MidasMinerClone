@@ -72,7 +72,7 @@ void GameManager::stopGame() {
 }
 
 
-bool GameManager::onKeyDown(const SDL_Keysym &keySym) {
+bool GameManager::onKeyDown(const SDL_Keysym &) {
     if(_gameState == GameState::Ended) {
         startGame();
     }
@@ -117,7 +117,7 @@ void GameManager::createGameOverScreen() {
     RenderComponent* render = _engine->renderSystem()->createComponent(transform, nullptr);
     render->setIsVisible(false);
     TextComponent* text = _engine->textSystem()->createComponent(render);
-    text->setText("GAME OVER", TextureManager::k_defaultFontName, 55, SDL_Color{ 255, 0, 0});
+    text->setText("GAME OVER", TextureManager::k_defaultFontName, 55, SDL_Color{ 255, 0, 0, 255});
     _gameOver = _engine->entitySystem()->createEntity();
     _gameOver->addComponent(transform);
     _gameOver->addComponent(render);
@@ -129,7 +129,7 @@ void GameManager::createGameOverScreen() {
     render = _engine->renderSystem()->createComponent(transform, nullptr);
     render->setIsVisible(false);
     text = _engine->textSystem()->createComponent(render);
-    text->setText("Press any key to restart", TextureManager::k_defaultFontName, 25, SDL_Color{ 255, 0, 0});
+    text->setText("Press any key to restart", TextureManager::k_defaultFontName, 25, SDL_Color{ 255, 0, 0, 255});
     _pressAnyButtonEntity = _engine->entitySystem()->createEntity();
     _pressAnyButtonEntity->addComponent(transform);
     _pressAnyButtonEntity->addComponent(render);

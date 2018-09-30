@@ -7,7 +7,7 @@
 
 class Engine;
 typedef struct _TTF_Font TTF_Font;
-typedef struct SDL_Color;
+typedef struct SDL_Color SDL_Color;
 struct SDL_Texture;
 
 enum class TextureID {

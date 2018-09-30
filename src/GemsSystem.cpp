@@ -135,7 +135,9 @@ void GemsSystem::update(float delta) {
 
         // Find the next place with a gem
         int occupiedIndex = vacantIndex;
-        for(; occupiedIndex < k_numGemsY && _board[x][occupiedIndex] == nullptr; occupiedIndex++);
+        while(occupiedIndex < k_numGemsY && _board[x][occupiedIndex] == nullptr) {
+			occupiedIndex++;
+        }
 
 		// If we didn't reach the top, means we found a hole!! Make things fall!
 		for (; occupiedIndex < k_numGemsY; occupiedIndex++) {
