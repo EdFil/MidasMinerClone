@@ -100,7 +100,7 @@ void GameManager::createTimeCounter() {
 void GameManager::updateTimeLabel() {
     SDL_assert(_timeEntity != nullptr);
     SDL_Color textColor = (_timeLeft < 10.0f) ? SDL_Color{ 255, 0, 0, 255 } : SDL_Color{ 0, 0, 255, 255};
-    TextComponent *textComponent = static_cast<TextComponent *>(_timeEntity->getComponentWithType(ComponentType::Text));
+    TextComponent* textComponent = static_cast<TextComponent *>(_timeEntity->getComponentWithType(ComponentType::Text));
     textComponent->setText(std::to_string(static_cast<int>(std::ceil(_timeLeft))), TextureManager::k_defaultFontName, 50, textColor);
 }
 

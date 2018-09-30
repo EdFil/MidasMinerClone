@@ -15,7 +15,7 @@ class TextureManager;
 class Engine : public ApplicationEventDelegate {
 public:
 	Engine();
-	~Engine();
+	virtual ~Engine();
 
 	bool initialize(std::unique_ptr<Scene>&& scene);
 	void cleanup();

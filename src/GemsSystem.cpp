@@ -89,10 +89,6 @@ void GemsSystem::setIsClickable(bool isClickable) {
 	_isClickable = isClickable;
 }
 
-bool GemsSystem::onKeyDown(const SDL_Keysym& keySym) { /* TODO: REMOVE */ }
-
-bool GemsSystem::onKeyUp(const SDL_Keysym& keySym) { /* Do nothing */ }
-
 void GemsSystem::update(float delta) {
 	memset(_currentFrameSpawnOffset, 0, sizeof(_currentFrameSpawnOffset));
 

@@ -3,11 +3,13 @@
 #include "MainMenuScene.hpp"
 
 int main(int, char const **) {
-    Engine engine;
-    if(engine.initialize(std::make_unique<MainMenuScene>())) {
-        engine.run();
+    Engine* engine = new Engine();
+    if(engine->initialize(std::make_unique<MainMenuScene>())) {
+        engine->run();
     }
-    engine.cleanup();
+
+    engine->cleanup();
+    delete engine;
 
     return 0;
 }

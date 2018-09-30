@@ -4,7 +4,6 @@
 #include <random>
 #include <memory>
 
-#include <EventDispatcher.hpp>
 #include <glm/vec2.hpp>
 
 #include "GameConstants.hpp"
@@ -20,32 +19,29 @@ struct NewBackToBackCount {
 	unsigned short numVerticalGems = 0;
 };
 
-class GemsSystem : public KeyEventDelegate {
+class GemsSystem {
 public:
     bool initialize(Engine* engine);
     void cleanup();
     void update(float delta);
-
-    bool onKeyDown(const SDL_Keysym& keySym) override;
-    bool onKeyUp(const SDL_Keysym& keySym) override;
-
-	void startGame();
-	void restartGame();
-	void clearBoard();
 	void setIsClickable(bool isClickable);
 
     Engine* engine() const { return _engine; }
 	static glm::vec2 positionForIndex(const glm::ivec2& index);
 
+	void createNewRandomGemOnIndex(const glm::ivec2& index);
 	void makeGemFallFromTo(const glm::ivec2& fromIndex, const glm::ivec2& toIndex);
 	bool trySwapGem(GemsComponent* gemComponent, const glm::ivec2& index);
 	void swapGems(GemsComponent* firstComponent, GemsComponent* secondComponent);
 	void cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>&  swapPair);
 	bool tryChainDelete(GemsComponent* component);
 	void removeEntity(const glm::ivec2 index);
+	void clearBoard();
 
 	// Query the system functions
 	bool areAllGemsResting() const;
+	NewBackToBackCount theNewBackToBackCount(const glm::ivec2& index, const GemType gemType);
+	GemType randomPossibleGemForIndex(const glm::ivec2& index);
 
 	// Gameplay Callbacks
 	void onGemClicked(GemsComponent* gemComponent);
@@ -58,10 +54,6 @@ public:
 
     GemsComponent* createComponent(RenderComponent* renderComponent);
     void releaseComponent(GemsComponent* component);
-
-	void createNewRandomGemOnIndex(const glm::ivec2& index);
-	NewBackToBackCount theNewBackToBackCount(const glm::ivec2& index, const GemType gemType);
-	GemType randomPossibleGemForIndex(const glm::ivec2& index);
 
 private:
 	std::default_random_engine randomGenerator;

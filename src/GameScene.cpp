@@ -23,7 +23,6 @@ void GameScene::onCreated() {
 	createBackgroundEntity();
 
     _gameManager->createForegroundLabels();
-
     _gameManager->startGame();
 }
 
