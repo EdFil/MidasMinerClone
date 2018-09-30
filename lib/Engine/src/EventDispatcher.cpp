@@ -28,6 +28,16 @@ void EventDispatcher::unregisterForMouseEvents(MouseEventDelegate* delegate) {
     _mouseEventDelegates.erase(it, _mouseEventDelegates.end());
 }
 
+void EventDispatcher::registerForKeyEvents(KeyEventDelegate* delegate) {
+    _keyEventDelegates.push_back(delegate);
+}
+
+void EventDispatcher::unregisterForKeyEvents(KeyEventDelegate* delegate) {
+    auto it = std::remove(_keyEventDelegates.begin(), _keyEventDelegates.end(), delegate);
+    _keyEventDelegates.erase(it, _keyEventDelegates.end());
+}
+
+
 void EventDispatcher::update() {
     // Fetch SDL_Events
     SDL_Event event;
@@ -44,6 +54,12 @@ void EventDispatcher::update() {
                 break;
             case SDL_MOUSEMOTION:
                 processOnMouseMotion(event.motion);
+                break;
+            case SDL_KEYDOWN:
+                processOnKeyDown(event.key);
+                break;
+            case SDL_KEYUP:
+                processOnKeyUp(event.key);
                 break;
             default:
                 break; // Ignore
@@ -87,5 +103,19 @@ void EventDispatcher::processOnMouseMotion(const SDL_MouseMotionEvent& motion) {
     for(MouseEventDelegate* delegate : _mouseEventDelegates) {
 		if (delegate->onMouseMotion(motion.x, motion.y))
 			break;
+    }
+}
+
+void EventDispatcher::processOnKeyDown(const SDL_KeyboardEvent& event) {
+    for(KeyEventDelegate* delegate : _keyEventDelegates) {
+        if (delegate->onKeyDown(event.keysym))
+            break;
+    }
+}
+
+void EventDispatcher::processOnKeyUp(const SDL_KeyboardEvent &event) {
+    for(KeyEventDelegate* delegate : _keyEventDelegates) {
+        if (delegate->onKeyUp(event.keysym))
+            break;
     }
 }

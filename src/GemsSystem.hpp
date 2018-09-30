@@ -2,12 +2,13 @@
 
 #include <array>
 #include <random>
+#include <memory>
 
+#include <EventDispatcher.hpp>
 #include <glm/vec2.hpp>
 
 #include "GameConstants.hpp"
 #include "GemsComponent.hpp"
-#include <memory>
 
 class Entity;
 class Engine;
@@ -26,13 +27,20 @@ struct NewBackToBackCount {
 	unsigned short numVerticalGems = 0;
 };
 
-class GemsSystem {
+class GemsSystem : public KeyEventDelegate {
 public:
     bool initialize(Engine* engine);
+    void cleanup();
     void update(float delta);
 	void updateTimeLabel();
 	void createScoreLabels();
+
+    bool onKeyDown(const SDL_Keysym& keySym) override;
+    bool onKeyUp(const SDL_Keysym& keySym) override;
+
+	void startGame();
 	void restartGame();
+	void clearBoard();
 
     Engine* engine() const { return _engine; }
 	static glm::vec2 positionForIndex(const glm::ivec2& index);
@@ -70,6 +78,8 @@ private:
     Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
 	Entity* _selectedGemCross{nullptr};
 	Entity* _timeEntity{nullptr};
+	Entity* _gameOver{nullptr};
+	Entity* _pressAnyButtonEntity{nullptr};
 	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};
 	float _timeLeft{0.0f};
 	GemsComponent* _selectedGem = nullptr;

@@ -52,6 +52,7 @@ SDL_Texture* TextureManager::loadText(const char* text, const char* fontName, un
 	std::string fullPath = std::string(RESOURCES_DIR) + fontName;
 
 	TTF_Font* font = nullptr;
+	// TODO: Cache fonts
 	//const auto it = _cachedFonts.find({ std::string(fontName), fontSize });
 	//if (it != _cachedFonts.cend()) {
 	//	font = it->second;
@@ -74,6 +75,7 @@ SDL_Texture* TextureManager::loadText(const char* text, const char* fontName, un
 
 	SDL_Texture* textTexture = SDL_CreateTextureFromSurface(_engine->renderer(), surfaceText);
 	SDL_FreeSurface(surfaceText);
+	TTF_CloseFont(font);
 
 	return textTexture;
 }

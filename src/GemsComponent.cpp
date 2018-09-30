@@ -77,9 +77,6 @@ void GemsComponent::onMovedInBoard(const glm::vec<2, int>& index) {
 }
 
 void GemsComponent::onRemovedFromBoard() {
-	SDL_assert(_gemStatus == GemStatus::Rest || _gemStatus == GemStatus::Swapped);
-	SDL_assert(_boardIndex.x != -1 && _boardIndex.y != -1);
-
     _boardIndex = { -1, -1 };
 	_gemStatus = GemStatus::Despawned;
     _system->engine()->eventDispatcher()->unregisterForMouseEvents(this);

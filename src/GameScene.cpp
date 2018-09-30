@@ -12,6 +12,7 @@
 #include "GemsSystem.hpp"
 
 GameScene::GameScene() { /* Needs to be defined on the cpp because of forward declaration of GemsSystem */ }
+GameScene::~GameScene() { /* Needs to be defined on the cpp because of forward declaration of GemsSystem */ }
 
 void GameScene::onCreated() {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "GameScene::onCreated");

@@ -10,6 +10,7 @@ class GemsSystem;
 class GameScene : public Scene {
 public:
 	GameScene();
+	~GameScene();
 
 	void onCreated() override;
 	void update(float delta) override;
