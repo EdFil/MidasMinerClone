@@ -88,7 +88,6 @@ void Engine::mainLoop() {
 		unsigned currentTime = SDL_GetTicks();
 		float delta = static_cast<float>(currentTime - _lastGetTicksTime) / 1000.0f;
 		_lastGetTicksTime = currentTime;
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%f", delta);
 
 		_eventDispatcher->update();
 

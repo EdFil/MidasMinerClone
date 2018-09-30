@@ -5,7 +5,7 @@
 #include <Scene.hpp>
 
 class Entity;
-class GemsSystem;
+class GameManager;
 
 class GameScene : public Scene {
 public:
@@ -18,5 +18,9 @@ public:
 
 private:
 	Entity* _background{nullptr};
-	std::unique_ptr<GemsSystem> _gemsSystem;
+    float _timeLeft{0.0f};
+    std::unique_ptr<GameManager> _gameManager;
+
+    // Auxiliary functions
+    void createBackgroundEntity();
 };

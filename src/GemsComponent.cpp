@@ -79,6 +79,7 @@ void GemsComponent::onMovedInBoard(const glm::vec<2, int>& index) {
 void GemsComponent::onRemovedFromBoard() {
     _boardIndex = { -1, -1 };
 	_gemStatus = GemStatus::Despawned;
+	_renderComponent->setIsVisible(false);
     _system->engine()->eventDispatcher()->unregisterForMouseEvents(this);
 }
 
@@ -192,6 +193,5 @@ bool GemsComponent::onMouseMotion(int x, int y) {
 		
 	}
 
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Is Dragging %d", _isDragging);
 	return true;
 }

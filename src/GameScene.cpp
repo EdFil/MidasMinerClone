@@ -9,7 +9,7 @@
 #include <ecs/TransformSystem.hpp>
 #include <ecs/RenderSystem.hpp>
 
-#include "GemsSystem.hpp"
+#include "GameManager.hpp"
 
 GameScene::GameScene() { /* Needs to be defined on the cpp because of forward declaration of GemsSystem */ }
 GameScene::~GameScene() { /* Needs to be defined on the cpp because of forward declaration of GemsSystem */ }
@@ -17,11 +17,27 @@ GameScene::~GameScene() { /* Needs to be defined on the cpp because of forward d
 void GameScene::onCreated() {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "GameScene::onCreated");
 
-	// Gems system
-	_gemsSystem = std::make_unique<GemsSystem>();
-	_gemsSystem->initialize(_engine);
+    _gameManager = std::make_unique<GameManager>(_engine);
+    _gameManager->initialize();
 
-	// Background Entity
+	createBackgroundEntity();
+
+    _gameManager->createForegroundLabels();
+
+    _gameManager->startGame();
+}
+
+void GameScene::update(float delta) {
+    _gameManager->update(delta);
+}
+
+void GameScene::onDestroy() {
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "GameScene::onDestroy");
+	_gameManager->cleanup();
+	_engine->entitySystem()->releaseEntity(_background);
+}
+
+void GameScene::createBackgroundEntity() {
 	TransformComponent* transform = _engine->transformSystem()->createComponent();
 
 	SDL_Texture* backgroundTexture = _engine->textureManager()->loadTexture(TextureID::Background);
@@ -30,15 +46,4 @@ void GameScene::onCreated() {
 	_background = _engine->entitySystem()->createEntity();
 	_background->addComponent(transform);
 	_background->addComponent(renderComponent);
-
-	_gemsSystem->createScoreLabels();
-}
-
-void GameScene::update(float delta) {
-	_gemsSystem->update(delta);
-}
-
-void GameScene::onDestroy() {
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "GameScene::onDestroy");
-	_engine->entitySystem()->releaseEntity(_background);
 }

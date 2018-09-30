@@ -13,13 +13,6 @@
 class Entity;
 class Engine;
 
-enum class GameState {
-    INVALID = -1,
-    Initializing,
-    Running,
-    Ended
-};
-
 struct NewBackToBackCount {
 	GemsComponent* horizontalGems[k_numGemsX]{ nullptr };
 	unsigned short numHorizontalGems = 0;
@@ -32,8 +25,6 @@ public:
     bool initialize(Engine* engine);
     void cleanup();
     void update(float delta);
-	void updateTimeLabel();
-	void createScoreLabels();
 
     bool onKeyDown(const SDL_Keysym& keySym) override;
     bool onKeyUp(const SDL_Keysym& keySym) override;
@@ -41,6 +32,7 @@ public:
 	void startGame();
 	void restartGame();
 	void clearBoard();
+	void setIsClickable(bool isClickable);
 
     Engine* engine() const { return _engine; }
 	static glm::vec2 positionForIndex(const glm::ivec2& index);
@@ -51,6 +43,9 @@ public:
 	void cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>&  swapPair);
 	bool tryChainDelete(GemsComponent* component);
 	void removeEntity(const glm::ivec2 index);
+
+	// Query the system functions
+	bool areAllGemsResting() const;
 
 	// Gameplay Callbacks
 	void onGemClicked(GemsComponent* gemComponent);
@@ -77,12 +72,8 @@ private:
     Engine* _engine = nullptr;
     Entity* _board[k_numGemsX][k_numGemsY] = {nullptr};
 	Entity* _selectedGemCross{nullptr};
-	Entity* _timeEntity{nullptr};
-	Entity* _gameOver{nullptr};
-	Entity* _pressAnyButtonEntity{nullptr};
 	unsigned _currentFrameSpawnOffset[k_numGemsX] = {0};
-	float _timeLeft{0.0f};
 	GemsComponent* _selectedGem = nullptr;
-    GameState _gameState = GameState::INVALID;
+	bool _isClickable = false;
 };
 

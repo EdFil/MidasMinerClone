@@ -34,6 +34,7 @@ bool GemsSystem::initialize(Engine* engine) {
 		component.type = ComponentType::Gem;
 	}
 
+	// Allocate all the necessary memory
     const size_t numGems = k_numGemsX * k_numGemsY;
     _waiting.reserve(numGems);
 	_gemsThatFell.reserve(numGems);
@@ -64,9 +65,6 @@ bool GemsSystem::initialize(Engine* engine) {
 	_selectedGemCross->addComponent(transform);
 	_selectedGemCross->addComponent(render);
 
-	_engine->eventDispatcher()->registerForKeyEvents(this);
-	startGame();
-
     return false;
 }
 
@@ -74,23 +72,6 @@ void GemsSystem::cleanup() {
     for(GemsComponent& component : _components) {
         component.cleanup();
     }
-
-    _engine->eventDispatcher()->unregisterForKeyEvents(this);
-    _gameState == GameState::INVALID;
-}
-
-void GemsSystem::startGame() {
-    SDL_assert(_gameState != GameState::Running);
-    _gameState = GameState::Initializing;
-    _timeLeft = 60.0f;
-}
-
-void GemsSystem::restartGame() {
-    clearBoard();
-    static_cast<RenderComponent*>(_gameOver->getComponentWithType(ComponentType::Render))->setIsVisible(false);
-    static_cast<RenderComponent*>(_pressAnyButtonEntity->getComponentWithType(ComponentType::Render))->setIsVisible(false);
-    startGame();
-    updateTimeLabel();
 }
 
 void GemsSystem::clearBoard() {
@@ -104,39 +85,16 @@ void GemsSystem::clearBoard() {
             _board[x][y] = nullptr;
 }
 
-bool GemsSystem::onKeyDown(const SDL_Keysym& keySym) {
-    if(_gameState == GameState::Ended) {
-        restartGame();
-    }
+void GemsSystem::setIsClickable(bool isClickable) {
+	_isClickable = isClickable;
 }
+
+bool GemsSystem::onKeyDown(const SDL_Keysym& keySym) { /* TODO: REMOVE */ }
 
 bool GemsSystem::onKeyUp(const SDL_Keysym& keySym) { /* Do nothing */ }
 
 void GemsSystem::update(float delta) {
 	memset(_currentFrameSpawnOffset, 0, sizeof(_currentFrameSpawnOffset));
-
-	// Check game state
-	if (_gameState == GameState::Initializing) {
-		auto it = _components.cbegin();
-		for (; it != _components.cend(); ++it) {
-			if (it->gemStatus() != GemStatus::Rest) 
-				break;
-		}
-		if (it == _components.cend()) {
-			_gameState = GameState::Running;
-		}
-	} else if(_gameState == GameState::Running) {
-		_timeLeft -= delta;
-		updateTimeLabel();
-		if(_timeLeft <= 0) {
-			_gameState = GameState::Ended;
-			clearBoard();
-            static_cast<RenderComponent*>(_gameOver->getComponentWithType(ComponentType::Render))->setIsVisible(true);
-            static_cast<RenderComponent*>(_pressAnyButtonEntity->getComponentWithType(ComponentType::Render))->setIsVisible(true);
-		}
-	} else if(_gameState == GameState::Ended) {
-		return;
-	}
 
 	// Check if some some finished swap animations
 	if(!_swappedGems.empty()) {
@@ -198,11 +156,6 @@ void GemsSystem::update(float delta) {
     }
 }
 
-void GemsSystem::updateTimeLabel() {
-	TextComponent* textComponent = static_cast<TextComponent*>(_timeEntity->getComponentWithType(ComponentType::Text));
-	textComponent->setText(std::to_string(static_cast<int>(std::ceil(_timeLeft))), TextureManager::k_defaultFontName, 50, SDL_Color{ 0, 0, 255 });
-}
-
 glm::vec2 GemsSystem::positionForIndex(const glm::ivec2& index) {
 	int y = k_numGemsY - 1 - index.y;
 	return glm::vec2(k_startPosition.x + k_gemPadding * (index.x + 1) + index.x * k_gemSize,
@@ -222,7 +175,7 @@ void GemsSystem::makeGemFallFromTo(const glm::ivec2& fromIndex, const glm::ivec2
 }
 
 bool GemsSystem::trySwapGem(GemsComponent* gemComponent, const glm::ivec2& index) {
-	if (gemComponent->index().x == 0 || !gemComponent->canSwap())
+	if (!gemComponent->canSwap() || index.x < 0 || index.y < 0 || index.x >= k_numGemsX || index.y >= k_numGemsY)
 		return false;
 
 	Entity* otherEntity = _board[index.x][index.y];
@@ -247,6 +200,8 @@ void GemsSystem::swapGems(GemsComponent* firstComponent, GemsComponent* secondCo
 	secondComponent->_finalPosition = positionForIndex(secondComponent->_boardIndex);
 	firstComponent->_swappingWith = secondComponent;
 	secondComponent->_swappingWith = firstComponent;
+
+	// TODO: UNSELECT GEM
 }
 
 void GemsSystem::cancelGemSwap(const std::pair<GemsComponent*, GemsComponent*>& swapPair) {
@@ -302,10 +257,21 @@ void GemsSystem::removeEntity(const glm::ivec2 index) {
 	_board[index.x][index.y] = nullptr;
 }
 
+
+bool GemsSystem::areAllGemsResting() const {
+    for(const GemsComponent& gemComponent : _components) {
+        if(gemComponent.gemStatus() != GemStatus::Rest)
+            return false;
+    }
+
+    return true;
+}
+
 void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
-	if(_gameState != GameState::Running) return;
+	if(!_isClickable) return;
 
 	if (gemComponent->canSwap()) {
+	    // TODO: Extract this into a method to "selected gem + swipe gem" bug
 		if (_selectedGem == nullptr) {
 			_selectedGem = gemComponent;
 
@@ -331,25 +297,25 @@ void GemsSystem::onGemClicked(GemsComponent* gemComponent) {
 }
 
 void GemsSystem::onGemSwipedLeft(GemsComponent* gemComponent) {
-	if(_gameState != GameState::Running) return;
+	if(!_isClickable) return;
 
 	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x - 1, gemComponent->index().y));
 }
 
 void GemsSystem::onGemSwipedRight(GemsComponent* gemComponent) {
-	if(_gameState != GameState::Running) return;
+	if(!_isClickable) return;
 
 	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x + 1, gemComponent->index().y));
 }
 
 void GemsSystem::onGemSwipedUp(GemsComponent* gemComponent) {
-	if(_gameState != GameState::Running) return;
+	if(!_isClickable) return;
 
 	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x, gemComponent->index().y + 1));
 }
 
 void GemsSystem::onGemSwipedDown(GemsComponent* gemComponent) {
-	if(_gameState != GameState::Running) return;
+	if(!_isClickable) return;
 
 	trySwapGem(gemComponent, glm::ivec2(gemComponent->index().x, gemComponent->index().y - 1));
 }
@@ -378,44 +344,6 @@ GemsComponent *GemsSystem::createComponent(RenderComponent* renderComponent) {
 void GemsSystem::releaseComponent(GemsComponent *component) {
     component->isUsed = false;
     component->cleanup();
-}
-
-void GemsSystem::createScoreLabels() {
-    // Time label
-	TransformComponent* transform = _engine->transformSystem()->createComponent();
-    transform->setPosition(k_timePosition);
-    RenderComponent* render = _engine->renderSystem()->createComponent(transform, nullptr);
-    TextComponent* text = _engine->textSystem()->createComponent(render);
-	_timeEntity = _engine->entitySystem()->createEntity();
-	_timeEntity->addComponent(transform);
-	_timeEntity->addComponent(render);
-	_timeEntity->addComponent(text);
-
-	updateTimeLabel();
-
-    // GameOver label
-    transform = _engine->transformSystem()->createComponent();
-    transform->setPosition({335.0f, 220.0f});
-    render = _engine->renderSystem()->createComponent(transform, nullptr);
-    render->setIsVisible(false);
-    text = _engine->textSystem()->createComponent(render);
-    text->setText("GAME OVER", TextureManager::k_defaultFontName, 55, SDL_Color{ 255, 0, 0});
-    _gameOver = _engine->entitySystem()->createEntity();
-    _gameOver->addComponent(transform);
-    _gameOver->addComponent(render);
-    _gameOver->addComponent(text);
-
-    // GameOver label
-    transform = _engine->transformSystem()->createComponent();
-    transform->setPosition({345.0f, 300.0f});
-    render = _engine->renderSystem()->createComponent(transform, nullptr);
-    render->setIsVisible(false);
-    text = _engine->textSystem()->createComponent(render);
-    text->setText("Press any key to restart", TextureManager::k_defaultFontName, 25, SDL_Color{ 255, 0, 0});
-    _pressAnyButtonEntity = _engine->entitySystem()->createEntity();
-    _pressAnyButtonEntity->addComponent(transform);
-    _pressAnyButtonEntity->addComponent(render);
-    _pressAnyButtonEntity->addComponent(text);
 }
 
 void GemsSystem::createNewRandomGemOnIndex(const glm::ivec2& index) {
