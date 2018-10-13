@@ -10,7 +10,7 @@ void MainMenuScene::onCreated() {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "MainMenuScene ::onCreated");
 }
 
-void MainMenuScene::update(float delta) {
+void MainMenuScene::update(float) {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "MainMenuScene ::onUpdate");
 	_engine->setScene(std::make_unique<GameScene>());
 }

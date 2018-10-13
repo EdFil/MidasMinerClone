@@ -18,6 +18,7 @@
 #include <ecs/EntitySystem.hpp>
 #include <ecs/TransformSystem.hpp>
 #include <ecs/RenderSystem.hpp>
+#include <cstring>
 
 static const int k_gemSize = 35;
 static const int k_gemPadding = 8;

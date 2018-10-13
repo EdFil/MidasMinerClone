@@ -13,11 +13,7 @@ TextureManager::TextureManager(Engine* engine) : _engine(engine) {
 	SDL_assert(_engine != nullptr);
 
 	IMG_Init(IMG_InitFlags::IMG_INIT_PNG);
-	SDL_LogError(SDL_LOG_CATEGORY_RENDER, SDL_GetError());
-
 	TTF_Init();
-	SDL_LogError(SDL_LOG_CATEGORY_RENDER, SDL_GetError());
-
 }
 
 SDL_Texture* TextureManager::loadTexture(const TextureID textureID) {
