@@ -58,7 +58,7 @@ endforeach()
 
 # Source gathering
 file(GLOB_RECURSE SOURCES 
-    "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c")
+    "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.hpp")
 
 # Make library
 add_library(Engine_Static STATIC ${SOURCES})
