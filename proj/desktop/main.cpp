@@ -8,11 +8,17 @@
 static const size_t k_numComponents = 5;
 
 template<typename T>
-struct ComponentWrapper
-{
+class ComponentWrapper {
+public:
 	ComponentWrapper() : _pointer(nullptr) { /* Empty */ }
 	ComponentWrapper(T* pointer) : _pointer(pointer) { /* Empty */ }
 
+
+	T* pointer() const { return _pointer; }
+	T* pointer() { return _pointer; }
+	void setPointer(T* pointer) { _pointer = pointer; }
+
+private:
 	T* _pointer;
 };
 
@@ -20,18 +26,18 @@ struct Component
 {
 	enum class Type { Used, Unused, Invalidated };
 
-	Type type;
-	ComponentWrapper<Component>* _usedPointer;
-	ComponentWrapper<Component>* _unusedPointer;
+	Type type{ Type::Unused };
+	ComponentWrapper<Component>* _usedPointer{ nullptr };
+	ComponentWrapper<Component>* _unusedPointer{ nullptr };
 	int value;
 
 	void debugPrint() const {
 		std::cout << value;
 
 		if(_unusedPointer != nullptr && _usedPointer == nullptr) {
-			std::cout << "-N-" << _unusedPointer->_pointer->value << " ";
+			std::cout << "-N-" << _unusedPointer->pointer()->value << " ";
 		} else if(_usedPointer != nullptr && _unusedPointer == nullptr) {
-			std::cout << "-U-" << _usedPointer->_pointer->value << " ";
+			std::cout << "-U-" << _usedPointer->pointer()->value << " ";
 		} else {
 			std::cout << "-E-# ";
 		}
@@ -60,8 +66,8 @@ struct System
 			_components[i].type = Component::Type::Unused;
 			_components[i]._usedPointer = nullptr;
 			
-			_unusedComponents[i]._pointer = &_components[_components.size() - 1 - i];
-			_unusedComponents[i]._pointer->_unusedPointer = &_unusedComponents[i];
+			_unusedComponents[i].setPointer(&_components[_components.size() - 1 - i]);
+			_unusedComponents[i].pointer()->_unusedPointer = &_unusedComponents[i];
 		}
 	}
 
@@ -71,7 +77,7 @@ struct System
 			return nullptr;
 		}
 
-		Component* component = _unusedComponents.back()._pointer;
+		Component* component = _unusedComponents.back().pointer();
 		_unusedComponents.pop_back();
 		_usedComponents.emplace_back(component);
 
@@ -85,11 +91,11 @@ struct System
 	void releaseComponent(ComponentWrapper<Component>* componentPtr) {
 		if(componentPtr == nullptr) { return; }
 
-		Component* component = componentPtr->_pointer;
+		Component* component = componentPtr->pointer();
 
 		auto it = std::find_if(_usedComponents.cbegin(), _usedComponents.cend(), 
 							   [&component](const ComponentWrapper<Component>& comp) {
-			return component == comp._pointer;
+			return component == comp.pointer();
 		});
 		if (it == _usedComponents.end()) { return; }
 
@@ -116,13 +122,13 @@ struct System
 
 		std::cout << "Unused - ";
 		for(ComponentWrapper<Component>& compPtr : _unusedComponents) {
-			compPtr._pointer->print();
+			compPtr.pointer()->print();
 		}
 		std::cout << "\n";
 
 		std::cout << "Used - ";
 		for (ComponentWrapper<Component>& compPtr : _usedComponents) {
-			compPtr._pointer->print();
+			compPtr.pointer()->print();
 		}
 		std::cout << "\nNeeds reorder - " << _needsReorder;
 		std::cout << "\n" << std::endl;
@@ -139,22 +145,25 @@ struct System
 				
 				if(lastUsedIndex > _components.size()) {
 					// Find the last used index
-					lastUsedIndex = _components.size() - 1;
 					for(size_t j = 0; j < _components.size(); j++) {
-						if(_components[j].type == Component::Type::Unused) {
-							lastUsedIndex = j - 1;
+						if(_components[j].type == Component::Type::Used) {
+							lastUsedIndex = j;
+						} else if(_components[j].type == Component::Type::Unused) {
 							break;
 						}
 					}
+				}
+
+				if(lastUsedIndex == INT_MAX) {
+					return;
 				}
 
 				auto copy = _components[lastUsedIndex];
 				_components[lastUsedIndex] = _components[i];
 				_components[i] = copy;
 
-
-				_components[i]._usedPointer->_pointer = &_components[i];
-				_components[lastUsedIndex]._unusedPointer->_pointer = &_components[lastUsedIndex];
+				_components[i]._usedPointer->setPointer(&_components[i]);
+				_components[lastUsedIndex]._unusedPointer->setPointer(&_components[lastUsedIndex]);
 				_components[lastUsedIndex].type = Component::Type::Unused;
 
 				lastUsedIndex--;
@@ -196,13 +205,22 @@ int main(int, char const **) {
 	system->visit();
 
 	system->releaseComponent(component1);
-	auto component4 = system->createComponent();
+	component1 = system->createComponent();
 	std::cout << "1 Release followed by a create\n";
 	system->visit();
 
+	auto component4 = system->createComponent();
 	auto component5 = system->createComponent();
 	auto component6 = system->createComponent();
 	system->releaseComponent(component6);
+	system->visit();
+
+	system->releaseComponent(component0);
+	system->releaseComponent(component4);
+	system->visit();
+
+	system->reorder();
+	std::cout << "Release 1st and last component and reorder\n";
 	system->visit();
 
 	return 0;
