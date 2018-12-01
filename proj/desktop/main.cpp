@@ -4,6 +4,8 @@
 #include <list>
 #include <cassert>
 #include <iostream>
+#include <algorithm>
+#include <climits>
 
 static const size_t k_numComponents = 5;
 
